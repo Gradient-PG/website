@@ -4,6 +4,9 @@
     width: 100%;
 
     gap: 100px;
+
+    position: relative;
+    margin:0 auto; 
 }
 
 .hero_background {
@@ -25,6 +28,9 @@
 .hero_wave {
     position: absolute;
     bottom: 0;
+    max-width: 100%;
+    margin:0 auto; 
+    height: auto;
 }
 
 .top_bar {

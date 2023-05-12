@@ -10,6 +10,7 @@ import logo from "../../public/logo.png";
 import Image from "next/image";
 import Link from "next/link";
 import Button from "./button";
+import AnimatedBackground from "./animated_background";
 
 export default class Hero extends Component {
   render() {
@@ -23,6 +24,7 @@ export default class Hero extends Component {
             alt="background"
             className={styles.hero_background_image}
           />
+          <AnimatedBackground />
 
         </div>
 
