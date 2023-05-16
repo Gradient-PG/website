@@ -34,7 +34,7 @@ export default class Hero extends Component {
             <Link href={""}>Home</Link>
             <Link href={""}>Blog</Link>
             <Link href={""}>Projects</Link>
-            <Button href="/" text="Join us"/>
+            <Button href="/" text="Discord"/>
             <Button href="/" text="Contact"/>
           </ul>
         </div>

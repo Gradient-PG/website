@@ -53,11 +53,10 @@ function draw() {
   ctx.beginPath();
   for (var i = 0, x = stars.length; i < x; i++) {
     var starI = stars[i];
-    // if(starI.x < 300 && starI.y < 500) continue;
-
+    
     ctx.moveTo(starI.x, starI.y);
     if (distance(mouseCircle, starI) < 150) ctx.lineTo(mouseCircle.x, mouseCircle.y);
-
+    
     for (var j = 0, x = stars.length; j < x; j++) {
       var starII = stars[j];
       if (distance(starI, starII) < 150) {

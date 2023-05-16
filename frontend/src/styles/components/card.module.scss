@@ -1,0 +1,29 @@
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    padding: 5rem 4.1rem;
+    border-radius: 15px;
+    box-shadow: 0px 0px 50px rgba(0, 0, 0, 0.1);
+    background: #FFFFFF;
+    gap: 20px;
+
+    h1 {
+        font-size: 1.4rem;
+        font-weight: bold;
+    }
+
+    p {
+        font-weight: normal;
+        color: #7D7D7D;
+    }
+}
+
+.image_holder {
+    padding: 1.2rem 1.4rem;
+    background-color: #DFEDF6;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
