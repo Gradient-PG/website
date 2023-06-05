@@ -3,13 +3,15 @@ import Hero from "@/components/hero";
 import Card from "@/components/card";
 import Cards from "@/components/cards";
 import Footer from "@/components/footer";
+import ProjectsSection from "@/components/projects_section";
 
 export default function Home() {
-  return (
-    <main>
-      <Hero />
-      <Cards />
-      <Footer />
-    </main>
-  );
+    return (
+        <main>
+            <Hero />
+            <Cards />
+            <ProjectsSection />
+            <Footer />
+        </main>
+    );
 }
