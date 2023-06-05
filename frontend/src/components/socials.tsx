@@ -8,14 +8,19 @@ import dc from "../../public/icons/discord.svg"
 import styles from "@/styles/components/socials.module.scss";
 import Image from 'next/image'
 
-export default class Socials extends Component {
+interface SocialsProps {
+    size: number
+}
+
+
+export default class Socials extends Component<SocialsProps> {
   render() {
     return (
       <div className={styles.main}>
-        <a href="facebook.com"><Image src={fb} width={42} height={42} alt="Facebook"/></a>
-        <a href="facebook.com"><Image src={gh} width={42} height={42} alt="Facebook"/></a>
-        <a href="facebook.com"><Image src={dc} width={42} height={42} alt="Facebook"/></a>
-        <a href="facebook.com"><Image src={ig} width={42} height={42} alt="Facebook"/></a>
+        <a href="facebook.com"><Image src={fb} width={this.props.size} height={this.props.size} alt="Facebook"/></a>
+        <a href="facebook.com"><Image src={gh} width={this.props.size} height={this.props.size} alt="Facebook"/></a>
+        <a href="facebook.com"><Image src={dc} width={this.props.size} height={this.props.size} alt="Facebook"/></a>
+        <a href="facebook.com"><Image src={ig} width={this.props.size} height={this.props.size} alt="Facebook"/></a>
       </div>
     )
   }
