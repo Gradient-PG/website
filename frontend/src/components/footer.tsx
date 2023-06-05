@@ -31,7 +31,7 @@ export default class Footer extends Component {
               <h1>Contact us</h1>
               <p><a href='mailto:gradient@pg.edu.pl'>gradient@pg.edu.pl</a></p>
             </div>
-            <Socials />
+            <Socials size={32}/>
           </div>
 
       </div>

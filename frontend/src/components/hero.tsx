@@ -7,6 +7,8 @@ import styles from "../styles/components/hero.module.scss";
 import bg_image from "../../public/hero-background.svg";
 import wave from "../../public/hero-wave.svg";
 import logo from "../../public/logo.png";
+import info from "../../public/info.json";
+
 import Image from "next/image";
 import Link from "next/link";
 import Button from "./button";
@@ -31,10 +33,9 @@ export default class Hero extends Component {
         <div className={classNames(styles.top_bar, "container")}>
           <Image src={logo} width={84} alt="logo gradient"/>
           <ul className={classNames(styles.menu)}>
-            <Link href={""}>Home</Link>
-            <Link href={""}>Blog</Link>
-            <Link href={""}>Projects</Link>
-            <Button href="/" text="Discord"/>
+            <Link href={"/"}>Home</Link>
+            <Link href={"/"}>Projects</Link>
+            <Button href={info.DISCORD_INVITE} target={"_blank"} text="Discord"/>
             <Button href="/" text="Contact"/>
           </ul>
         </div>

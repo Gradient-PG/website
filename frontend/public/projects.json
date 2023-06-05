@@ -1,0 +1,24 @@
+{
+    "projects": [
+        {
+            "name": "Neural Style Transfer",
+            "href": "https://github.com/Gradient-PG/live-nst",
+            "img": "transfer.jpg"
+        },
+        {
+            "name": "Gradient Live Session",
+            "href": "https://github.com/Gradient-PG/gradient-live-session",
+            "img": "live.jpg"
+        },
+        {
+            "name": "NLP Chatbot",
+            "href": "https://github.com/Gradient-PG/nlp-chatbot",
+            "img": "nlp.jpg"
+        },
+        {
+            "name": "RL Karting",
+            "href": "https://github.com/Gradient-PG/rl-karting-v2",
+            "img": "kart.jpg"
+        }
+    ]
+}
