@@ -1,17 +1,16 @@
 "use client"
 
 import React, { Component } from 'react'
-import logo from "../../public/logo.png";
+import logo from "@/public/logo.png";
 import Image from "next/image"
 import classNames from 'classnames';
 
-import bg_image from "../../public/footer-background.svg";
-import wave from "../../public/hero-wave.svg";
+import bg_image from "@/public/footer-background.svg";
+import wave from "@/public/hero-wave.svg";
 
 
 import styles from "@/styles/components/footer.module.scss"
-import Socials from './socials';
-import AnimatedBackground from './animated_background';
+import Socials from '@/components/socials';
 
 export default class Footer extends Component {
   render() {

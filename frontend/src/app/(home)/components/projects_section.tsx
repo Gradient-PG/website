@@ -1,5 +1,5 @@
-import styles from "../styles/components/projects_section.module.scss";
-import projects from "../../public/projects.json"
+import styles from "@/styles/components/projects_section.module.scss";
+import projects from "@/public/data/projects.json"
 import Image from "next/image"
 
 let PROJECTS_PATH = "/projects/"

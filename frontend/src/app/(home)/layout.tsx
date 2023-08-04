@@ -1,5 +1,5 @@
 import { Lato } from 'next/font/google'
-import "../styles/_globals.scss"
+import "@/styles/_globals.scss"
 
 import classnames from 'classnames'
 

@@ -1,18 +1,15 @@
 import React, { Component } from "react";
 import styles from "@/styles/components/animated_background.module.scss"
+import animateCanvas from "../lib/animate_bg";
 
 export default class AnimatedBackground extends Component {
   componentDidMount(): void {
-    const script = document.createElement("script");
-
-    script.src = "/scripts/animate_bg.js";
-
-    document.body.appendChild(script);
+    animateCanvas("heroCanvas")
   }
 
   render() {
     return (
-        <canvas id="canvas" className={styles.main}></canvas>
+        <canvas id="heroCanvas" className={styles.main}></canvas>
     );
   }
 }

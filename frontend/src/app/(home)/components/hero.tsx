@@ -2,16 +2,17 @@
 
 import React, { Component } from "react";
 import classNames from "classnames";
-import styles from "../styles/components/hero.module.scss";
+import styles from "@/styles/components/hero.module.scss";
 
-import bg_image from "../../public/hero-background.svg";
-import wave from "../../public/hero-wave.svg";
-import logo from "../../public/logo.png";
-import info from "../../public/info.json";
+import bg_image from "@/public/hero-background.svg";
+import wave from "@/public/hero-wave.svg";
+import logo from "@/public/logo.png";
+import info from "@/public/data/info.json";
+
 
 import Image from "next/image";
 import Link from "next/link";
-import Button from "./button";
+import Button from "@/components/button";
 import AnimatedBackground from "./animated_background";
 
 export default class Hero extends Component {
