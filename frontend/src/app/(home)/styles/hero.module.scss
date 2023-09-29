@@ -1,3 +1,5 @@
+@use "../../../styles/mixins";
+
 .main {
     display: flex;
     flex-direction: column;
@@ -76,5 +78,33 @@
     p {
         font-size: 20px;
         color: #D8D8D8;
+    }
+}
+
+
+@include mixins.mobile() {
+    .main {
+        height: auto;
+        background-color: #0B2847;
+    }
+
+    .hero_background {
+        display: none;
+    }
+
+    .top_bar {
+        display: none;
+    }
+
+    .text_section {
+        max-width: 100%;
+
+        h1 {
+            font-size: 1.8rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+        }
     }
 }

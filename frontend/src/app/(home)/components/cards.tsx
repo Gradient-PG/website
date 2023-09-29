@@ -1,8 +1,8 @@
 "use client"
 import React, { Component } from 'react'
-import Card from './card'
+import Card from '../../../components/card'
 
-import styles from "@/styles/components/cards.module.scss"
+import styles from "../styles/cards.module.scss"
 
 export default class Cards extends Component {
   render() {

@@ -2,7 +2,7 @@
 
 import React, { Component } from "react";
 import classNames from "classnames";
-import styles from "@/styles/components/hero.module.scss";
+import styles from "../styles/hero.module.scss";
 
 import bg_image from "@/public/hero-background.svg";
 import wave from "@/public/hero-wave.svg";
@@ -37,14 +37,14 @@ export default class Hero extends Component {
             <Link href={"/"}>Home</Link>
             <Link href={"/"}>Projects</Link>
             <Button href={info.DISCORD_INVITE} target={"_blank"} text="Discord"/>
-            <Button href="/" text="Contact"/>
+            <Button href="/contact" text="Contact"/>
           </ul>
         </div>
 
         <div className={classNames(styles.text_section, "container")}>
           <h1>Gradient<br></br>Research Group</h1>
           <p>We are a team of passionate students who are dedicated to exploring the exciting field of machine learning. Our group provides a platform for learning and growth in this rapidly advancing field.</p>
-          <Button href="/" text="Join us"/>
+          <Button href="/contact" text="Join us"/>
         </div>
       </div>
     );

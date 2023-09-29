@@ -1,3 +1,5 @@
+@use "../mixins";
+
 .main {
     display: flex;
     flex-direction: column;
@@ -26,4 +28,10 @@
     background-color: #DFEDF6;
     border-radius: 10px;
     margin-bottom: 1rem;
+}
+
+@include mixins.mobile() {
+    .main {
+        padding: 3rem 2rem;
+    }
 }

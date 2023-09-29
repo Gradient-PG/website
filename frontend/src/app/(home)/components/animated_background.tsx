@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import styles from "@/styles/components/animated_background.module.scss"
+import styles from "../styles/animated_background.module.scss"
 import animateCanvas from "../lib/animate_bg";
 
 export default class AnimatedBackground extends Component {
