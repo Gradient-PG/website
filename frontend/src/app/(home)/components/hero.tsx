@@ -35,16 +35,15 @@ export default class Hero extends Component {
           <Image src={logo} width={84} alt="logo gradient"/>
           <ul className={classNames(styles.menu)}>
             <Link href={"/"}>Home</Link>
-            <Link href={"/"}>Projects</Link>
+            <Link href={"/#projects"}>Projects</Link>
             <Button href={info.DISCORD_INVITE} target={"_blank"} text="Discord"/>
-            <Button href="/contact" text="Contact"/>
           </ul>
         </div>
 
         <div className={classNames(styles.text_section, "container")}>
           <h1>Gradient<br></br>Research Group</h1>
           <p>We are a team of passionate students who are dedicated to exploring the exciting field of machine learning. Our group provides a platform for learning and growth in this rapidly advancing field.</p>
-          <Button href="/contact" text="Join us"/>
+          <Button href={info.DISCORD_INVITE} target="_blank" text="Join us"/>
         </div>
       </div>
     );

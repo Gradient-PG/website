@@ -43,6 +43,9 @@
                     border-radius: 10px;
                 }
 
+                &:hover {
+                    filter: brightness(0.8);
+                }
 
             }
         }

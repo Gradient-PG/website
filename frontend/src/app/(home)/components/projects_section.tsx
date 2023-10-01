@@ -7,7 +7,7 @@ let PROJECTS_PATH = "/projects/"
 export default function ProjectsSection() {
 
     return (
-        <div className={styles.main}>
+        <div className={styles.main} id="projects">
             <div className={styles.heading}>
                 <h2>CHECK OUT</h2>
                 <h1>Our Projects</h1>
