@@ -12,7 +12,7 @@ const Cards: React.FC<CardsProps> = ({...props}) => {
   let icons_path = "/images/icons/";
 
   return (
-    <div className={cn('flex flex-row justify-around flex-wrap md:flex-nowrap', props.className)}>
+    <div className={cn('container flex flex-row justify-around flex-wrap md:flex-nowrap', props.className)}>
       {aboutBenefits.cards.map((benefit, index) => {
         return (
           <Card className='w-full m-4' key={index}>

@@ -13,7 +13,7 @@ interface FooterProps extends React.HTMLProps<HTMLDivElement> { }
 
 const Footer: React.FC<FooterProps> = ({...props}) => {
   return (
-    <div className={cn('relative w-full min-h-64 pb-4', props.className)}>
+    <div className={cn('relative min-h-64 pb-4', props.className)}>
       <Image src={wave} alt="" className='w-full absolute rotate-180 -z-10 -mt-1  md:block hidden' />
       <Image
         src={bg_image}

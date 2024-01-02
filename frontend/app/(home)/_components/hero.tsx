@@ -36,7 +36,7 @@ export default function Hero() {
       </div>
 
 
-      <div className="md:p-16 p-8 flex flex-col md:mb-32">
+      <div className="md:p-16 p-8 flex flex-col md:mb-32 container">
         <div className={cn("items-center justify-between my-8 hidden md:flex")}>
           <Logo />
           <ul className={cn("flex gap-6 items-center text-md text-white font-bold")}>

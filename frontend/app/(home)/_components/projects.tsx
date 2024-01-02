@@ -14,7 +14,7 @@ const Projects: React.FC<ProjectsProps> = ({...props}) => {
   let projects_path = "/images/projects/";
 
   return (
-    <div className={cn('flex flex-col align-center', props.className)} id="projects">
+    <div className={cn('container flex flex-col align-center', props.className)} id="projects">
       <div className='flex flex-col justify-center text-center'>
         <h1 className='font-bold text-secondary'>CHECK OUT</h1>
         <h2 className='font-bold text-3xl'>OUR PROJECTS</h2>

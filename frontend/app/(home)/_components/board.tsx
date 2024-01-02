@@ -10,7 +10,7 @@ interface BoardProps extends React.HTMLProps<HTMLDivElement> { }
 const Board: React.FC<BoardProps> = ({ ...props }) => {
   let icons_path = "/images/icons/";
   return (
-    <div className={cn('flex flex-col justify-center', props.className)}>
+    <div className={cn('container flex flex-col justify-center', props.className)}>
       <div className="text-center">
         <h1 className='font-bold text-3xl'>Our Board</h1>
       </div>
