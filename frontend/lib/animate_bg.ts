@@ -6,12 +6,14 @@ interface Star {
   vy: number,
 }
 
-export default function animateCanvas(canvasId: string) {
+export default function animateCanvas(canvasId: string, width: number, height: number) {
   let canvas: HTMLCanvasElement = <HTMLCanvasElement> document.getElementById(canvasId)!;
   let ctx = canvas.getContext("2d")!;
+  canvas.width = width;
+  canvas.height = height;
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  // canvas.width = window.innerWidth;
+  // canvas.height = window.innerHeight;
 
   var stars: Star[] = []; // Array that contains the stars
   let FPS = 60; // Frames per second
