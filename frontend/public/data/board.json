@@ -1,38 +1,34 @@
 {
-    "members": [
-        {
-            "name": "Franciszek",
-            "surname": "Górski",
-            "position": "Boss",
-            "icon": "mountain"
-        },
-        {
-            "name": "Kamil",
-            "surname": "Kozioł",
-            "position": "Member",
-            "icon": "ghost"
-
-        },
-        {
-            "name": "Serhii",
-            "surname": "Pyskovatskyi",
-            "position": "Member",
-            "icon": "fire"
-
-        },
-        {
-            "name": "Krzysztof",
-            "surname": "Kuchta",
-            "position": "Member",
-            "icon": "wheelchair"
-
-        },
-        {
-            "name": "Rafał",
-            "surname": "Jankowski",
-            "position": "Member",
-            "icon": "shield"
-
-        }
-    ]
+  "members": [
+    {
+      "name": "Franciszek",
+      "surname": "Górski",
+      "position": "Boss",
+      "icon": "mountain"
+    },
+    {
+      "name": "Kamil",
+      "surname": "Kozioł",
+      "position": "Member",
+      "icon": "ghost"
+    },
+    {
+      "name": "Serhii",
+      "surname": "Pyskovatskyi",
+      "position": "Member",
+      "icon": "fire"
+    },
+    {
+      "name": "Krzysztof",
+      "surname": "Kuchta",
+      "position": "Member",
+      "icon": "wheelchair"
+    },
+    {
+      "name": "Rafał",
+      "surname": "Jankowski",
+      "position": "Member",
+      "icon": "shield"
+    }
+  ]
 }
