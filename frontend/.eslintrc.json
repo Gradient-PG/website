@@ -1,3 +1,6 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": ["eslint:recommended", "next", "prettiernpx eslint-config-prettier"],
+  "rules": {
+    "indent": ["warn", 2]
+  }
 }

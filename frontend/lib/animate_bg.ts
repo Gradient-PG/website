@@ -1,13 +1,19 @@
 interface Star {
-  x: number,
-  y: number,
-  radius:number,
-  vx: number,
-  vy: number,
+  x: number;
+  y: number;
+  radius: number;
+  vx: number;
+  vy: number;
 }
 
-export default function animateCanvas(canvasId: string, width: number, height: number) {
-  let canvas: HTMLCanvasElement = <HTMLCanvasElement> document.getElementById(canvasId)!;
+export default function animateCanvas(
+  canvasId: string,
+  width: number,
+  height: number,
+) {
+  let canvas: HTMLCanvasElement = <HTMLCanvasElement>(
+    document.getElementById(canvasId)!
+  );
   let ctx = canvas.getContext("2d")!;
   canvas.width = width;
   canvas.height = height;
@@ -31,7 +37,7 @@ export default function animateCanvas(canvasId: string, width: number, height: n
 
   // Push stars to array
 
-  for (var i = 0; i < maxStars; i++) {
+  for (let i = 0; i < maxStars; i++) {
     stars.push({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
@@ -49,7 +55,7 @@ export default function animateCanvas(canvasId: string, width: number, height: n
     ctx.globalCompositeOperation = "lighter";
 
     // dots
-    for (var i = 0, x = stars.length; i < x; i++) {
+    for (let i = 0, x = stars.length; i < x; i++) {
       var s = stars[i];
 
       ctx.fillStyle = "white";
@@ -63,14 +69,14 @@ export default function animateCanvas(canvasId: string, width: number, height: n
     // lines
 
     ctx.beginPath();
-    for (var i = 0, x = stars.length; i < x; i++) {
+    for (let i = 0; i < stars.length; i++) {
       var starI = stars[i];
 
       ctx.moveTo(starI.x, starI.y);
       if (distance(mouseCircle, starI) < 150)
         ctx.lineTo(mouseCircle.x, mouseCircle.y);
 
-      for (var j = 0, x = stars.length; j < x; j++) {
+      for (var j = 0; j < stars.length; j++) {
         var starII = stars[j];
         if (distance(starI, starII) < 150) {
           ctx.lineTo(starII.x, starII.y);
@@ -92,7 +98,10 @@ export default function animateCanvas(canvasId: string, width: number, height: n
     ctx.stroke();
   }
 
-  function distance(point1: { x: any; y: any; }, point2: { x: number; y: number; }) {
+  function distance(
+    point1: { x: any; y: any },
+    point2: { x: number; y: number },
+  ) {
     var xs = 0;
     var ys = 0;
 
