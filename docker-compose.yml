@@ -1,0 +1,11 @@
+version: "3.7"
+
+services:
+  gradient:
+    command: npm run dev
+    image: gradientpg/website:2.1
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - 6007:3000
