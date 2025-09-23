@@ -1,5 +1,4 @@
 import Footer from "@/components/footer";
-import Plug from "@/components/plug";
 import Board from "./_components/board";
 import Cards from "./_components/cards";
 import Hero from "./_components/hero";
@@ -13,7 +12,6 @@ export default function Home() {
       <Projects className="mt-16" />
       <Board className="mt-16" />
       <Footer className="mt-16" />
-      <Plug />
     </main>
   );
 }
