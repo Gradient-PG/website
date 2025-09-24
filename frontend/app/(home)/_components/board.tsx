@@ -49,7 +49,7 @@ const Board: React.FC<BoardProps> = async ({ ...props }) => {
             >
               <div className="relative rounded-full bg-primary w-16 h-16 overflow-hidden">
                 {member.photoUrl ? (
-                  <Image
+                <Image
                     alt={`${member.name} photo`}
                     fill
                     className="object-cover"

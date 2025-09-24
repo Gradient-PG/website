@@ -150,13 +150,16 @@ Why not a headless CMS (Strapi, Sanity) or Git-based CMS (Decap)? They add setup
     - [x] Create admin dashboard with overview stats
     - [x] Implement auth-protected admin pages
     - [x] Add admin-specific styling and components
-  - **Phase 3.3: Projects Management**
-    - [ ] Admin API routes for projects CRUD (`/api/admin/projects/*`)
-    - [ ] Projects list page with table view and actions
-    - [ ] Create project form with validation
-    - [ ] Edit project form with pre-populated data
-    - [ ] Delete project with confirmation modal
-    - [ ] Bulk actions (delete multiple, change status)
+  - **Phase 3.3: Projects Management** ✅ COMPLETED
+    - [x] Admin API routes for projects CRUD (`/api/admin/projects/*`)
+    - [x] Projects list page with table view and actions
+    - [x] Create project form with validation
+    - [x] Edit project form with pre-populated data
+    - [x] Delete project with confirmation modal
+    - [x] Bulk actions (delete multiple, change status)
+    - [x] Client-side filtering and search functionality
+    - [x] Toast notifications for user feedback
+    - [x] Bulk status updates for multiple projects
   - **Phase 3.4: Board Members Management**
     - [ ] Admin API routes for board members CRUD (`/api/admin/board/*`)
     - [ ] Board members list page with table view
@@ -200,7 +203,7 @@ Why not a headless CMS (Strapi, Sanity) or Git-based CMS (Decap)? They add setup
 ---
 
 ### Change Log
-- 2025-09-23: Initial roadmap created. Chose in-app minimal CMS with SQLite and Basic Auth for simplicity.
+- 2025-09-23: Initial roadmap created. Chose in-app minimal CMS with SQLite and Basic Auth for simplicity. 
 - 2025-09-24: **Phase 1 & 2 Completed**:
   - Implemented data layer with JSON-based storage (interim solution for development)
   - Created repository pattern for CRUD operations with file-based storage

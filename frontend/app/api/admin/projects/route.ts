@@ -43,6 +43,8 @@ export async function POST(request: NextRequest) {
       projectData.slug = await projectsRepo.generateSlug(projectData.title);
     }
 
+    // Links are already in the correct JSON string format from the form
+
     const project = await projectsRepo.create(projectData);
     return NextResponse.json({ project }, { status: 201 });
   } catch (error: any) {

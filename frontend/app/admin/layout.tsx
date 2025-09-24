@@ -10,6 +10,7 @@ import {
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard - Gradient Science Club',
@@ -113,6 +114,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </main>
       </div>
+      <Toaster />
     </div>
   );
 } 
