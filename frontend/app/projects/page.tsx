@@ -142,7 +142,7 @@ function ProjectCard({ project }: { project: Project }) {
 
       <CardContent className="flex-1">
         <p className="text-muted-foreground mb-4 line-clamp-3">
-          {project.description}
+          {project.description || 'No description provided.'}
         </p>
         
         {/* Tags */}

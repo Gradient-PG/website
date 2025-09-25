@@ -170,13 +170,13 @@ Why not a headless CMS (Strapi, Sanity) or Git-based CMS (Decap)? They add setup
     - [x] Client-side filtering and search functionality (by name, role, status)
     - [x] Toast notifications for user feedback
     - [x] Statistics dashboard (active members, leadership count, etc.)
-  - **Phase 3.5: Form Validation & UX**
-    - [ ] Client-side form validation with error messages
-    - [ ] Server-side validation and error handling
-    - [ ] Success/error toast notifications
-    - [ ] Loading states and form submission feedback
-    - [ ] Auto-save drafts functionality
-    - [ ] Form field helpers (slug generation, etc.)
+  - **Phase 3.5: Form Validation & UX** ✅ COMPLETED
+    - [x] Client-side form validation with error messages
+    - [x] Server-side validation and error handling
+    - [x] Success/error toast notifications
+    - [x] Loading states and form submission feedback
+    - [x] Auto-save drafts functionality
+    - [x] Form field helpers (slug generation, etc.)
   - **Phase 3.6: Image Upload & Management** ✅ COMPLETED
     - [x] Update database schema to support base64 image storage (BoardMember + Project)
     - [x] Add image upload component with drag & drop functionality
@@ -245,4 +245,14 @@ Why not a headless CMS (Strapi, Sanity) or Git-based CMS (Decap)? They add setup
   - Profile photos automatically cropped and resized to 200x200px at 80% JPEG quality
   - Project images automatically cropped and resized to 400x400px at 80% JPEG quality
   - Comprehensive image management for both board members and projects
-  - All displays (home, list pages, detail pages) prioritize uploaded images over external URLs 
+  - All displays (home, list pages, detail pages) prioritize uploaded images over external URLs
+- 2025-09-25: **Phase 3.5 Completed**: 
+  - Implemented comprehensive form validation library with client-side and server-side validation
+  - Created enhanced FormField component with real-time validation, loading states, and character counting
+  - Added auto-save draft functionality with localStorage persistence and restore notifications
+  - Enhanced API endpoints with detailed validation error responses and better error handling
+  - Implemented intelligent slug generation and uniqueness validation for projects
+  - Added toast notifications for all form actions (success, error, auto-save, restore)
+  - Created debounced validation for improved UX performance
+  - Added form submission feedback with loading states and comprehensive error messages
+  - Enhanced both project and board member creation/edit forms with new validation system

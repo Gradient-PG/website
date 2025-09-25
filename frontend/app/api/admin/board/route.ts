@@ -30,10 +30,18 @@ export async function POST(request: NextRequest) {
   try {
     const memberData = await request.json();
     
-    // Validate required fields
-    if (!memberData.name || !memberData.role) {
+    // Import validation function
+    const { validateBoardMember } = await import('@/lib/validation');
+    
+    // Validate the board member data
+    const validation = validateBoardMember(memberData);
+    if (!validation.isValid) {
       return NextResponse.json(
-        { error: 'Name and role are required' },
+        { 
+          error: 'Validation failed',
+          details: validation.errors,
+          fieldErrors: validation.fieldErrors
+        },
         { status: 400 }
       );
     }

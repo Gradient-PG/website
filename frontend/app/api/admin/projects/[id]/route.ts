@@ -40,6 +40,34 @@ export async function PUT(
 
   try {
     const projectData = await request.json();
+    
+    // Import validation function
+    const { validateProject } = await import('@/lib/validation');
+    
+    // Validate the project data
+    const validation = validateProject(projectData);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { 
+          error: 'Validation failed',
+          details: validation.errors,
+          fieldErrors: validation.fieldErrors
+        },
+        { status: 400 }
+      );
+    }
+
+    // Additional server-side checks for slug uniqueness
+    if (projectData.slug) {
+      const existingProject = await projectsRepo.findBySlug(projectData.slug);
+      if (existingProject && existingProject.id !== params.id) {
+        return NextResponse.json(
+          { error: 'A project with this URL slug already exists' },
+          { status: 409 }
+        );
+      }
+    }
+
     const project = await projectsRepo.update(params.id, projectData);
     return NextResponse.json({ project });
   } catch (error: any) {

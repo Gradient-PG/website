@@ -329,7 +329,7 @@ function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
                       <div>
                         <div className="font-medium">{project.title}</div>
                         <div className="text-sm text-muted-foreground line-clamp-2">
-                          {project.description}
+                          {project.description || 'No description'}
                         </div>
                       </div>
                     </td>
@@ -482,7 +482,7 @@ function ProjectsManager() {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(project =>
         project.title.toLowerCase().includes(search) ||
-        project.description.toLowerCase().includes(search) ||
+        (project.description && project.description.toLowerCase().includes(search)) ||
         (project.tags && project.tags.toLowerCase().includes(search))
       );
     }

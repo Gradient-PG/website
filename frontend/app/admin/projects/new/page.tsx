@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, RotateCcw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageUpload from '@/components/ui/image-upload';
+import { FormField } from '@/components/ui/form-field';
+import { useToast } from '@/hooks/use-toast';
+import { useAutoSave } from '@/hooks/use-autosave';
+import { validateProject, generateSlug, ValidationRules } from '@/lib/validation';
 import type { ProjectInput } from '@/lib/types';
 
 interface FormErrors {
@@ -27,8 +31,11 @@ interface FormErrors {
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProjectInput>({
     title: '',
     slug: '',
@@ -41,87 +48,126 @@ export default function NewProjectPage() {
     displayOrder: 0,
   });
 
-  // Auto-generate slug from title
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
+  // Track if user has made changes (for new forms, any non-empty content counts as changes)
+  const [hasUserMadeChanges, setHasUserMadeChanges] = useState(false);
+
+  // Auto-save functionality - only enabled after user makes changes
+  const { restoreSavedData, clearSavedData, hasSavedData } = useAutoSave({
+    key: 'new-project',
+    data: formData,
+    enabled: !isLoading && hasUserMadeChanges,
+    onRestore: (data) => setFormData(data),
+  });
+
+  // Check for saved data on component mount
+  useEffect(() => {
+    if (hasSavedData()) {
+      // Show restore option
+      toast({
+        title: 'Unsaved changes found',
+        description: 'Would you like to restore your previous draft?',
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => restoreSavedData()}
+          >
+            Restore
+          </Button>
+        ),
+        duration: 10000,
+      });
+    }
+  }, []);
+
+  // Real-time form validation
+  const validateFormInRealTime = () => {
+    if (!isSubmitted) return;
+    const validation = validateProject(formData);
+    setErrors(validation.errors);
   };
 
+  useEffect(() => {
+    validateFormInRealTime();
+  }, [formData, isSubmitted]);
+
+  // Detect changes for new form (any meaningful content)
+  useEffect(() => {
+    if (!hasUserMadeChanges) {
+      const hasContent = Object.values(formData).some(value => 
+        value !== null && value !== undefined && String(value).trim() !== '' && 
+        value !== 0 && value !== 'planned' // ignore default values
+      );
+      
+      if (hasContent) {
+        setHasUserMadeChanges(true);
+      }
+    }
+  }, [formData, hasUserMadeChanges]);
+
   const handleTitleChange = (value: string) => {
+    const newSlug = generateSlug(value);
     setFormData(prev => ({
       ...prev,
       title: value,
-      slug: prev.slug === generateSlug(prev.title) || !prev.slug ? generateSlug(value) : prev.slug
+      // Auto-update slug if it hasn't been manually edited
+      slug: prev.slug === generateSlug(prev.title) || !prev.slug ? newSlug : prev.slug
     }));
+    
+    // Clear title error if it exists
     if (errors.title) {
       setErrors(prev => ({ ...prev, title: undefined }));
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+  const handleSlugChange = (value: string) => {
+    setFormData(prev => ({ ...prev, slug: value }));
+    setSlugError(null);
+    
+    // Clear slug error if it exists
+    if (errors.slug) {
+      setErrors(prev => ({ ...prev, slug: undefined }));
     }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
-    if (!formData.slug.trim()) {
-      newErrors.slug = 'Slug is required';
-    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-      newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
-    }
-
-    if (formData.imageUrl && !isValidUrl(formData.imageUrl)) {
-      newErrors.imageUrl = 'Please enter a valid URL';
-    }
-
-    if (formData.links) {
-      try {
-        const links = JSON.parse(formData.links);
-        if (typeof links !== 'object' || Array.isArray(links)) {
-          newErrors.links = 'Links must be a valid JSON object';
-        } else {
-          for (const [type, url] of Object.entries(links)) {
-            if (typeof url !== 'string' || !isValidUrl(url)) {
-              newErrors.links = 'All link URLs must be valid';
-              break;
-            }
-          }
-        }
-      } catch {
-        newErrors.links = 'Links must be valid JSON';
-      }
-    }
-
-    if ((formData.displayOrder ?? 0) < 0) {
-      newErrors.displayOrder = 'Display order must be a positive number';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const isValidUrl = (string: string) => {
+  // Async slug validation
+  const validateSlugUnique = async (slug: string): Promise<string | null> => {
+    if (!slug) return 'URL slug is required';
+    
+    const slugValidation = ValidationRules.slug(slug, 'URL slug');
+    if (slugValidation) return slugValidation;
+
     try {
-      new URL(string);
-      return true;
-    } catch {
-      return false;
+      const response = await fetch(`/api/admin/projects?slug=${encodeURIComponent(slug)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.projects && data.projects.some((p: any) => p.slug === slug)) {
+          return 'This URL slug is already taken';
+        }
+      }
+    } catch (error) {
+      return 'Could not validate URL slug';
     }
+    
+    return null;
+  };
+
+  const validateFormData = (): boolean => {
+    setIsSubmitted(true);
+    const validation = validateProject(formData);
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!validateFormData()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fix the errors above before submitting.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -142,15 +188,39 @@ export default function NewProjectPage() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create project');
+        const errorData = await response.json();
+        
+        // Handle detailed validation errors from server
+        if (errorData.details) {
+          setErrors(errorData.details);
+          toast({
+            title: 'Validation Error',
+            description: errorData.error || 'Please fix the errors and try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        throw new Error(errorData.error || 'Failed to create project');
       }
+
+      // Clear auto-saved data on successful submission
+      clearSavedData();
+      
+      toast({
+        title: 'Project Created',
+        description: 'Your project has been created successfully.',
+      });
 
       router.push('/admin/projects');
       router.refresh();
     } catch (error) {
       console.error('Error creating project:', error);
-      setErrors({ title: error instanceof Error ? error.message : 'Failed to create project' });
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create project',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -159,19 +229,33 @@ export default function NewProjectPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/projects">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Projects
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create New Project</h1>
-          <p className="text-muted-foreground">
-            Add a new project to showcase your club's initiatives
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/projects">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Projects
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Create New Project</h1>
+            <p className="text-muted-foreground">
+              Add a new project to showcase your club's initiatives
+            </p>
+          </div>
         </div>
+        
+        {hasSavedData() && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => restoreSavedData()}
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Restore Draft
+          </Button>
+        )}
       </div>
 
       {/* Form */}
@@ -185,53 +269,45 @@ export default function NewProjectPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="Enter project title"
-                className={errors.title ? "border-red-500" : ""}
-              />
-              {errors.title && (
-                <p className="text-sm text-red-600">{errors.title}</p>
-              )}
-            </div>
+            <FormField
+              label="Title"
+              name="title"
+              value={formData.title}
+              onChange={handleTitleChange}
+              placeholder="Enter project title"
+              required
+              error={errors.title}
+              maxLength={100}
+              hint="A clear, descriptive title for your project"
+            />
 
             {/* Slug */}
-            <div className="space-y-2">
-              <Label htmlFor="slug">URL Slug *</Label>
-              <Input
-                id="slug"
-                value={formData.slug}
-                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                placeholder="project-url-slug"
-                className={errors.slug ? "border-red-500" : ""}
-              />
-              <p className="text-sm text-muted-foreground">
-                Used in the project URL: /projects/{formData.slug || 'your-slug'}
-              </p>
-              {errors.slug && (
-                <p className="text-sm text-red-600">{errors.slug}</p>
-              )}
-            </div>
+            <FormField
+              label="URL Slug"
+              name="slug"
+              value={formData.slug}
+              onChange={handleSlugChange}
+              placeholder="project-url-slug"
+              required
+              error={errors.slug || slugError || undefined}
+              maxLength={50}
+              validator={validateSlugUnique}
+              hint={`Used in the project URL: /projects/${formData.slug || 'your-slug'}`}
+            />
 
             {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe your project..."
-                rows={4}
-                className={errors.description ? "border-red-500" : ""}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-600">{errors.description}</p>
-              )}
-            </div>
+            <FormField
+              label="Description"
+              name="description"
+              type="textarea"
+              value={formData.description || ''}
+              onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+              placeholder="Describe your project in detail... (optional)"
+              required={false}
+              error={errors.description}
+              rows={4}
+              hint="Optional: Provide a description of your project's goals and outcomes"
+            />
 
             {/* Status */}
             <div className="space-y-2">
@@ -291,56 +367,40 @@ export default function NewProjectPage() {
             </div>
 
             {/* Tags */}
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags</Label>
-              <Input
-                id="tags"
-                value={formData.tags}
-                onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
-                placeholder="science, research, AI"
-              />
-              <p className="text-sm text-muted-foreground">
-                Comma-separated tags for categorizing your project
-              </p>
-            </div>
+            <FormField
+              label="Tags"
+              name="tags"
+              value={formData.tags || ''}
+              onChange={(value) => setFormData(prev => ({ ...prev, tags: value }))}
+              placeholder="science, research, AI, data visualization"
+              error={errors.tags}
+              maxLength={200}
+              hint="Comma-separated tags for categorizing and filtering your project"
+            />
 
             {/* Links */}
-            <div className="space-y-2">
-              <Label htmlFor="links">Links (JSON)</Label>
-              <Textarea
-                id="links"
-                value={formData.links}
-                onChange={(e) => setFormData(prev => ({ ...prev, links: e.target.value }))}
-                placeholder='{"github": "https://github.com/...", "website": "https://example.com"}'
-                rows={3}
-                className={errors.links ? "border-red-500" : ""}
-              />
-              <p className="text-sm text-muted-foreground">
-                JSON object of links: {`{"type": "url", "github": "...", "website": "..."}`}
-              </p>
-              {errors.links && (
-                <p className="text-sm text-red-600">{errors.links}</p>
-              )}
-            </div>
+            <FormField
+              label="Links (JSON)"
+              name="links"
+              type="textarea"
+              value={formData.links || ''}
+              onChange={(value) => setFormData(prev => ({ ...prev, links: value }))}
+              placeholder='{"github": "https://github.com/...", "website": "https://example.com", "demo": "https://demo.com"}'
+              rows={3}
+              error={errors.links}
+              hint={`JSON object of project links. Example: {"github": "...", "website": "...", "demo": "..."}`}
+            />
 
             {/* Display Order */}
-            <div className="space-y-2">
-              <Label htmlFor="displayOrder">Display Order</Label>
-              <Input
-                id="displayOrder"
-                type="number"
-                min="0"
-                value={formData.displayOrder}
-                onChange={(e) => setFormData(prev => ({ ...prev, displayOrder: parseInt(e.target.value) || 0 }))}
-                className={errors.displayOrder ? "border-red-500" : ""}
-              />
-              <p className="text-sm text-muted-foreground">
-                Lower numbers appear first in the list
-              </p>
-              {errors.displayOrder && (
-                <p className="text-sm text-red-600">{errors.displayOrder}</p>
-              )}
-            </div>
+            <FormField
+              label="Display Order"
+              name="displayOrder"
+              type="number"
+              value={formData.displayOrder || 0}
+              onChange={(value) => setFormData(prev => ({ ...prev, displayOrder: parseInt(value) || 0 }))}
+              error={errors.displayOrder}
+              hint="Lower numbers appear first in the project list (0 = highest priority)"
+            />
 
             {/* Form Actions */}
             <div className="flex gap-4 pt-6">

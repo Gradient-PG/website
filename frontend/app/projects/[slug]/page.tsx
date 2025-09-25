@@ -37,10 +37,10 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
 
   return {
     title: `${project.title} | Gradient Science Club`,
-    description: project.description,
+    description: project.description || `Learn more about ${project.title} from Gradient Science Club`,
     openGraph: {
       title: project.title,
-      description: project.description,
+      description: project.description || `Learn more about ${project.title} from Gradient Science Club`,
       images: project.imageUrl ? [project.imageUrl] : [],
     },
   };
@@ -145,10 +145,15 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold mb-4">About This Project</h2>
               <div className="prose prose-gray max-w-none">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {project.description}
-                </p>
-              </div>
+                {project.description ? (
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {project.description}
+                  </p>
+                ) : (
+                  <p className="text-gray-500 italic">
+                    No description provided for this project.
+                  </p>
+                )}</div>
             </CardContent>
           </Card>
         </div>

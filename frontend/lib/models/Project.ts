@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IProject extends Document {
   title: string;
   slug: string;
-  description: string;
+  description?: string; // Optional description
   imageUrl?: string;
   imageBase64?: string; // Base64 encoded image (takes priority over imageUrl)
   tags?: string;
@@ -29,7 +29,7 @@ const ProjectSchema = new Schema<IProject>({
   },
   description: {
     type: String,
-    required: true,
+    required: false, // Made optional
     trim: true,
   },
   imageUrl: {

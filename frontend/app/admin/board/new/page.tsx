@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, X } from 'lucide-react';
+import { ArrowLeft, Save, X, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,9 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from "@/hooks/use-toast";
+import { useAutoSave } from '@/hooks/use-autosave';
+import { validateBoardMember } from '@/lib/validation';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import Avatar from '@/components/ui/avatar';
 import ImageUpload from '@/components/ui/image-upload';
+import { FormField } from '@/components/ui/form-field';
 
 interface FormData {
   name: string;
@@ -40,6 +43,7 @@ export default function NewBoardMemberPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -51,6 +55,62 @@ export default function NewBoardMemberPage() {
     displayOrder: 0,
     active: true,
   });
+
+  // Track if user has made changes (for new forms, any non-empty content counts as changes)
+  const [hasUserMadeChanges, setHasUserMadeChanges] = useState(false);
+
+  // Auto-save functionality - only enabled after user makes changes
+  const { restoreSavedData, clearSavedData, hasSavedData } = useAutoSave({
+    key: 'new-board-member',
+    data: formData,
+    enabled: !isLoading && hasUserMadeChanges,
+    onRestore: (data) => setFormData(data),
+  });
+
+  // Check for saved data on component mount
+  useEffect(() => {
+    if (hasSavedData()) {
+      toast({
+        title: 'Unsaved changes found',
+        description: 'Would you like to restore your previous draft?',
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => restoreSavedData()}
+          >
+            Restore
+          </Button>
+        ),
+        duration: 10000,
+      });
+    }
+  }, []);
+
+  // Real-time form validation
+  const validateFormInRealTime = () => {
+    if (!isSubmitted) return;
+    const validation = validateBoardMember(formData);
+    setErrors(validation.errors);
+  };
+
+  useEffect(() => {
+    validateFormInRealTime();
+  }, [formData, isSubmitted]);
+
+  // Detect changes for new form (any meaningful content)
+  useEffect(() => {
+    if (!hasUserMadeChanges) {
+      const hasContent = Object.values(formData).some(value => 
+        value !== null && value !== undefined && String(value).trim() !== '' && 
+        value !== 0 && value !== true // ignore default values
+      );
+      
+      if (hasContent) {
+        setHasUserMadeChanges(true);
+      }
+    }
+  }, [formData, hasUserMadeChanges]);
 
   const isValidUrl = (url: string): boolean => {
     try {
@@ -70,54 +130,22 @@ export default function NewBoardMemberPage() {
     return isValidUrl(value) || isValidEmail(value);
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    // Required fields
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.role.trim()) {
-      newErrors.role = 'Role is required';
-    }
-
-    // Optional but validated fields
-    if (formData.photoUrl && !isValidUrl(formData.photoUrl)) {
-      newErrors.photoUrl = 'Photo URL must be a valid URL';
-    }
-
-    if (formData.socials) {
-      try {
-        const socials = JSON.parse(formData.socials);
-        if (typeof socials !== 'object' || Array.isArray(socials)) {
-          newErrors.socials = 'Socials must be a valid JSON object';
-        } else {
-          // Validate URLs and emails in socials object
-          for (const [platform, value] of Object.entries(socials)) {
-            if (typeof value !== 'string' || !isValidSocialValue(value)) {
-              newErrors.socials = 'All social links must be valid URLs or email addresses';
-              break;
-            }
-          }
-        }
-      } catch {
-        newErrors.socials = 'Socials must be valid JSON';
-      }
-    }
-
-    if (formData.displayOrder < 0) {
-      newErrors.displayOrder = 'Display order must be 0 or greater';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validateFormData = (): boolean => {
+    setIsSubmitted(true);
+    const validation = validateBoardMember(formData);
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!validateFormData()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fix the errors above before submitting.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -139,10 +167,25 @@ export default function NewBoardMemberPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle detailed validation errors from server
+        if (errorData.details) {
+          setErrors(errorData.details);
+          toast({
+            title: 'Validation Error',
+            description: errorData.error || 'Please fix the errors and try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to create board member');
       }
 
       const data = await response.json();
+      
+      // Clear auto-saved data on successful submission
+      clearSavedData();
       
       toast({
         title: "Board member created",
@@ -179,19 +222,33 @@ export default function NewBoardMemberPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/admin/board">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Board Members
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add Board Member</h1>
-          <p className="text-muted-foreground">
-            Create a new board member profile
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/admin/board">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Board Members
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Add Board Member</h1>
+            <p className="text-muted-foreground">
+              Create a new board member profile
+            </p>
+          </div>
         </div>
+
+        {hasSavedData() && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => restoreSavedData()}
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Restore Draft
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -207,33 +264,29 @@ export default function NewBoardMemberPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Full name"
-                      className={errors.name ? "border-red-500" : ""}
-                    />
-                    {errors.name && (
-                      <p className="text-sm text-red-600">{errors.name}</p>
-                    )}
-                  </div>
+                  <FormField
+                    label="Name"
+                    name="name"
+                    value={formData.name}
+                    onChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+                    placeholder="Full name"
+                    required
+                    error={errors.name}
+                    maxLength={100}
+                    hint="Full name of the board member"
+                  />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role *</Label>
-                    <Input
-                      id="role"
-                      value={formData.role}
-                      onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
-                      placeholder="e.g., President, Secretary, Member"
-                      className={errors.role ? "border-red-500" : ""}
-                    />
-                    {errors.role && (
-                      <p className="text-sm text-red-600">{errors.role}</p>
-                    )}
-                  </div>
+                  <FormField
+                    label="Role"
+                    name="role"
+                    value={formData.role}
+                    onChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+                    placeholder="e.g., President, Secretary, Member"
+                    required
+                    error={errors.role}
+                    maxLength={100}
+                    hint="Position or role within the organization"
+                  />
                 </div>
 
                 {/* Photo Upload Section */}
@@ -277,23 +330,17 @@ export default function NewBoardMemberPage() {
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Biography</Label>
-                  <Textarea
-                    id="bio"
-                    value={formData.bio}
-                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                    placeholder="Brief biography or description"
-                    rows={4}
-                    className={errors.bio ? "border-red-500" : ""}
-                  />
-                  {errors.bio && (
-                    <p className="text-sm text-red-600">{errors.bio}</p>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    Optional: Brief description or biography
-                  </p>
-                </div>
+                <FormField
+                  label="Biography"
+                  name="bio"
+                  type="textarea"
+                  value={formData.bio}
+                  onChange={(value) => setFormData(prev => ({ ...prev, bio: value }))}
+                  placeholder="Brief biography or description of the member's background and role"
+                  rows={4}
+                  error={errors.bio}
+                  hint="Optional: Brief description of background, expertise, and responsibilities"
+                />
               </CardContent>
             </Card>
 

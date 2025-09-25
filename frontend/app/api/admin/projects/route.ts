@@ -30,10 +30,18 @@ export async function POST(request: NextRequest) {
   try {
     const projectData = await request.json();
     
-    // Validate required fields
-    if (!projectData.title || !projectData.description) {
+    // Import validation function
+    const { validateProject } = await import('@/lib/validation');
+    
+    // Validate the project data
+    const validation = validateProject(projectData);
+    if (!validation.isValid) {
       return NextResponse.json(
-        { error: 'Title and description are required' },
+        { 
+          error: 'Validation failed',
+          details: validation.errors,
+          fieldErrors: validation.fieldErrors
+        },
         { status: 400 }
       );
     }
@@ -43,7 +51,17 @@ export async function POST(request: NextRequest) {
       projectData.slug = await projectsRepo.generateSlug(projectData.title);
     }
 
-    // Links are already in the correct JSON string format from the form
+    // Additional server-side checks
+    if (projectData.slug) {
+      // Check if slug already exists
+      const existingProject = await projectsRepo.findBySlug(projectData.slug);
+      if (existingProject) {
+        return NextResponse.json(
+          { error: 'A project with this URL slug already exists' },
+          { status: 409 }
+        );
+      }
+    }
 
     const project = await projectsRepo.create(projectData);
     return NextResponse.json({ project }, { status: 201 });

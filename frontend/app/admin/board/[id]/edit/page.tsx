@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,9 +22,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAutoSave } from '@/hooks/use-autosave';
+import { validateBoardMember } from '@/lib/validation';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import Avatar from '@/components/ui/avatar';
 import ImageUpload from '@/components/ui/image-upload';
+import { FormField } from '@/components/ui/form-field';
 import type { BoardMember } from '@/lib/types';
 
 interface EditBoardMemberPageProps {
@@ -61,6 +64,7 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -72,6 +76,41 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
     displayOrder: 0,
     active: true,
   });
+
+  // Track if user has made changes
+  const [hasUserMadeChanges, setHasUserMadeChanges] = useState(false);
+  const [originalFormData, setOriginalFormData] = useState<FormData | null>(null);
+
+  // Auto-save functionality for edit form - only enabled after user makes changes
+  const { restoreSavedData, clearSavedData, hasSavedData } = useAutoSave({
+    key: `edit-board-member-${params.id}`,
+    data: formData,
+    enabled: !isLoading && !isLoadingMember && hasUserMadeChanges && member !== null,
+    onRestore: (data) => setFormData(data),
+  });
+
+  // Real-time form validation
+  const validateFormInRealTime = () => {
+    if (!isSubmitted) return;
+    const validation = validateBoardMember(formData);
+    setErrors(validation.errors);
+  };
+
+  useEffect(() => {
+    validateFormInRealTime();
+  }, [formData, isSubmitted]);
+
+  // Detect changes from original data
+  useEffect(() => {
+    if (originalFormData && !hasUserMadeChanges) {
+      const currentDataString = JSON.stringify(formData);
+      const originalDataString = JSON.stringify(originalFormData);
+      
+      if (currentDataString !== originalDataString) {
+        setHasUserMadeChanges(true);
+      }
+    }
+  }, [formData, originalFormData, hasUserMadeChanges]);
 
   // Load existing board member data
   useEffect(() => {
@@ -96,7 +135,8 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
         const memberData = data.member;
         
         setMember(memberData);
-        setFormData({
+        
+        const originalData = {
           name: memberData.name || '',
           role: memberData.role || '',
           photoUrl: memberData.photoUrl || '',
@@ -105,7 +145,44 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
           socials: memberData.socials || '', // Load as string
           displayOrder: memberData.displayOrder || 0,
           active: memberData.active !== undefined ? memberData.active : true,
-        });
+        };
+
+        // Store original data for comparison
+        setOriginalFormData(originalData);
+
+        // Always load original data first, let user choose to restore draft
+        setFormData(originalData);
+        
+        // Show draft restore option if available
+        setTimeout(() => {
+          if (hasSavedData()) {
+            toast({
+              title: 'Unsaved changes found',
+              description: 'You have a draft with unsaved changes.',
+              action: (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const draftData = restoreSavedData();
+                    if (draftData) {
+                      setFormData(draftData);
+                      setHasUserMadeChanges(true);
+                      toast({
+                        title: 'Draft restored',
+                        description: 'Your previous changes have been restored.',
+                        duration: 2000,
+                      });
+                    }
+                  }}
+                >
+                  Restore
+                </Button>
+              ),
+              duration: 10000,
+            });
+          }
+        }, 500);
       } catch (error) {
         console.error('Error loading board member:', error);
         toast({
@@ -140,54 +217,22 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
     return isValidUrl(value) || isValidEmail(value);
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    // Required fields
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.role.trim()) {
-      newErrors.role = 'Role is required';
-    }
-
-    // Optional but validated fields
-    if (formData.photoUrl && !isValidUrl(formData.photoUrl)) {
-      newErrors.photoUrl = 'Photo URL must be a valid URL';
-    }
-
-    if (formData.socials) {
-      try {
-        const socials = JSON.parse(formData.socials);
-        if (typeof socials !== 'object' || Array.isArray(socials)) {
-          newErrors.socials = 'Socials must be a valid JSON object';
-        } else {
-          // Validate URLs and emails in socials object
-          for (const [platform, value] of Object.entries(socials)) {
-            if (typeof value !== 'string' || !isValidSocialValue(value)) {
-              newErrors.socials = 'All social links must be valid URLs or email addresses';
-              break;
-            }
-          }
-        }
-      } catch {
-        newErrors.socials = 'Socials must be valid JSON';
-      }
-    }
-
-    if (formData.displayOrder < 0) {
-      newErrors.displayOrder = 'Display order must be 0 or greater';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validateFormData = (): boolean => {
+    setIsSubmitted(true);
+    const validation = validateBoardMember(formData);
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!validateFormData()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fix the errors above before submitting.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -209,10 +254,26 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle detailed validation errors from server
+        if (errorData.details) {
+          setErrors(errorData.details);
+          toast({
+            title: 'Validation Error',
+            description: errorData.error || 'Please fix the errors and try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to update board member');
       }
 
       const data = await response.json();
+      
+      // Clear auto-saved data and reset change tracking on successful submission
+      clearSavedData();
+      setHasUserMadeChanges(false);
       
       toast({
         title: "Board member updated",
@@ -344,7 +405,31 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
           </div>
         </div>
         
-        <AlertDialog>
+        <div className="flex items-center gap-2">
+          {hasSavedData() && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const draftData = restoreSavedData();
+                if (draftData) {
+                  setFormData(draftData);
+                  setHasUserMadeChanges(true);
+                  toast({
+                    title: 'Draft restored',
+                    description: 'Your previous changes have been restored.',
+                    duration: 2000,
+                  });
+                }
+              }}
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Restore Draft
+            </Button>
+          )}
+          
+          <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" className="text-red-600 hover:text-red-700">
               <Trash2 className="h-4 w-4 mr-2" />
@@ -370,6 +455,7 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -385,33 +471,29 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Full name"
-                      className={errors.name ? "border-red-500" : ""}
-                    />
-                    {errors.name && (
-                      <p className="text-sm text-red-600">{errors.name}</p>
-                    )}
-                  </div>
+                  <FormField
+                    label="Name"
+                    name="name"
+                    value={formData.name}
+                    onChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+                    placeholder="Full name"
+                    required
+                    error={errors.name}
+                    maxLength={100}
+                    hint="Full name of the board member"
+                  />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role *</Label>
-                    <Input
-                      id="role"
-                      value={formData.role}
-                      onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
-                      placeholder="e.g., President, Secretary, Member"
-                      className={errors.role ? "border-red-500" : ""}
-                    />
-                    {errors.role && (
-                      <p className="text-sm text-red-600">{errors.role}</p>
-                    )}
-                  </div>
+                  <FormField
+                    label="Role"
+                    name="role"
+                    value={formData.role}
+                    onChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+                    placeholder="e.g., President, Secretary, Member"
+                    required
+                    error={errors.role}
+                    maxLength={100}
+                    hint="Position or role within the organization"
+                  />
                 </div>
 
                 {/* Photo Upload Section */}

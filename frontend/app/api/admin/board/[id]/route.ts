@@ -41,6 +41,22 @@ export async function PUT(
   try {
     const memberData = await request.json();
 
+    // Import validation function
+    const { validateBoardMember } = await import('@/lib/validation');
+    
+    // Validate the board member data
+    const validation = validateBoardMember(memberData);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { 
+          error: 'Validation failed',
+          details: validation.errors,
+          fieldErrors: validation.fieldErrors
+        },
+        { status: 400 }
+      );
+    }
+
     const member = await boardMembersRepo.update(params.id, memberData);
     return NextResponse.json({ member });
   } catch (error: any) {

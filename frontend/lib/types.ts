@@ -4,7 +4,7 @@ export interface Project {
   id: string; // MongoDB ObjectId as string
   title: string;
   slug: string;
-  description: string;
+  description?: string; // Optional description
   imageUrl?: string;
   imageBase64?: string; // Base64 encoded image (takes priority over imageUrl)
   tags?: string; // JSON or comma-separated
@@ -18,7 +18,7 @@ export interface Project {
 export interface ProjectInput {
   title: string;
   slug: string;
-  description: string;
+  description?: string; // Optional description
   imageUrl?: string;
   imageBase64?: string;
   tags?: string;

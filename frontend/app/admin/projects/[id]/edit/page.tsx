@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageUpload from '@/components/ui/image-upload';
+import { FormField } from '@/components/ui/form-field';
+import { useToast } from '@/hooks/use-toast';
+import { useAutoSave } from '@/hooks/use-autosave';
+import { validateProject, generateSlug, ValidationRules } from '@/lib/validation';
 import type { Project, ProjectInput } from '@/lib/types';
 
 interface FormErrors {
@@ -33,9 +37,12 @@ interface EditProjectPageProps {
 
 export default function EditProjectPage({ params }: EditProjectPageProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<ProjectInput>({
     title: '',
@@ -48,6 +55,41 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     links: '',
     displayOrder: 0,
   });
+
+  // Track if user has made changes
+  const [hasUserMadeChanges, setHasUserMadeChanges] = useState(false);
+  const [originalFormData, setOriginalFormData] = useState<ProjectInput | null>(null);
+
+  // Auto-save functionality for edit form - only enabled after user makes changes
+  const { restoreSavedData, clearSavedData, hasSavedData } = useAutoSave({
+    key: `edit-project-${params.id}`,
+    data: formData,
+    enabled: !isLoading && !isLoadingProject && hasUserMadeChanges && project !== null,
+    onRestore: (data) => setFormData(data),
+  });
+
+  // Real-time form validation
+  const validateFormInRealTime = () => {
+    if (!isSubmitted) return;
+    const validation = validateProject(formData);
+    setErrors(validation.errors);
+  };
+
+  useEffect(() => {
+    validateFormInRealTime();
+  }, [formData, isSubmitted]);
+
+  // Detect changes from original data
+  useEffect(() => {
+    if (originalFormData && !hasUserMadeChanges) {
+      const currentDataString = JSON.stringify(formData);
+      const originalDataString = JSON.stringify(originalFormData);
+      
+      if (currentDataString !== originalDataString) {
+        setHasUserMadeChanges(true);
+      }
+    }
+  }, [formData, originalFormData, hasUserMadeChanges]);
 
   // Load existing project data
   useEffect(() => {
@@ -64,17 +106,55 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
         const projectData = data.project;
         
         setProject(projectData);
-        setFormData({
+        
+        const originalData = {
           title: projectData.title,
           slug: projectData.slug,
-          description: projectData.description,
+          description: projectData.description || '',
           imageUrl: projectData.imageUrl || '',
           imageBase64: projectData.imageBase64 || '',
           tags: projectData.tags || '',
           status: projectData.status,
           links: projectData.links || '',
           displayOrder: projectData.displayOrder || 0,
-        });
+        };
+
+        // Store original data for comparison
+        setOriginalFormData(originalData);
+
+        // Always load original data first, let user choose to restore draft
+        setFormData(originalData);
+        
+        // Show draft restore option if available
+        setTimeout(() => {
+          if (hasSavedData()) {
+            toast({
+              title: 'Unsaved changes found',
+              description: 'You have a draft with unsaved changes.',
+              action: (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const draftData = restoreSavedData();
+                    if (draftData) {
+                      setFormData(draftData);
+                      setHasUserMadeChanges(true);
+                      toast({
+                        title: 'Draft restored',
+                        description: 'Your previous changes have been restored.',
+                        duration: 2000,
+                      });
+                    }
+                  }}
+                >
+                  Restore
+                </Button>
+              ),
+              duration: 10000,
+            });
+          }
+        }, 500);
       } catch (error) {
         console.error('Error loading project:', error);
         setErrors({ title: 'Failed to load project' });
@@ -97,77 +177,71 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
   };
 
   const handleTitleChange = (value: string) => {
+    const newSlug = generateSlug(value);
     setFormData(prev => ({
       ...prev,
       title: value,
-      // Only auto-update slug if it matches the generated slug or is empty
-      slug: project && prev.slug === generateSlug(prev.title) || !prev.slug ? generateSlug(value) : prev.slug
+      // Auto-update slug if it hasn't been manually edited
+      slug: project && prev.slug === generateSlug(prev.title) || !prev.slug ? newSlug : prev.slug
     }));
+    
+    // Clear title error if it exists
     if (errors.title) {
       setErrors(prev => ({ ...prev, title: undefined }));
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+  const handleSlugChange = (value: string) => {
+    setFormData(prev => ({ ...prev, slug: value }));
+    setSlugError(null);
+    
+    // Clear slug error if it exists
+    if (errors.slug) {
+      setErrors(prev => ({ ...prev, slug: undefined }));
     }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
-    if (!formData.slug.trim()) {
-      newErrors.slug = 'Slug is required';
-    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-      newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
-    }
-
-    if (formData.imageUrl && !isValidUrl(formData.imageUrl)) {
-      newErrors.imageUrl = 'Please enter a valid URL';
-    }
-
-    if (formData.links) {
-      try {
-        const links = JSON.parse(formData.links);
-        if (typeof links !== 'object' || Array.isArray(links)) {
-          newErrors.links = 'Links must be a valid JSON object';
-        } else {
-          for (const [type, url] of Object.entries(links)) {
-            if (typeof url !== 'string' || !isValidUrl(url)) {
-              newErrors.links = 'All link URLs must be valid';
-              break;
-            }
-          }
-        }
-      } catch {
-        newErrors.links = 'Links must be valid JSON';
-      }
-    }
-
-    if ((formData.displayOrder ?? 0) < 0) {
-      newErrors.displayOrder = 'Display order must be a positive number';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const isValidUrl = (string: string) => {
+  // Async slug validation
+  const validateSlugUnique = async (slug: string): Promise<string | null> => {
+    if (!slug) return 'URL slug is required';
+    
+    const slugValidation = ValidationRules.slug(slug, 'URL slug');
+    if (slugValidation) return slugValidation;
+
+    // Skip uniqueness check if slug hasn't changed
+    if (project && slug === project.slug) return null;
+
     try {
-      new URL(string);
-      return true;
-    } catch {
-      return false;
+      const response = await fetch(`/api/admin/projects?slug=${encodeURIComponent(slug)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.projects && data.projects.some((p: any) => p.slug === slug && p.id !== params.id)) {
+          return 'This URL slug is already taken';
+        }
+      }
+    } catch (error) {
+      return 'Could not validate URL slug';
     }
+    
+    return null;
+  };
+
+  const validateFormData = (): boolean => {
+    setIsSubmitted(true);
+    const validation = validateProject(formData);
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!validateFormData()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fix the errors above before submitting.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -188,15 +262,40 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update project');
+        const errorData = await response.json();
+        
+        // Handle detailed validation errors from server
+        if (errorData.details) {
+          setErrors(errorData.details);
+          toast({
+            title: 'Validation Error',
+            description: errorData.error || 'Please fix the errors and try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        throw new Error(errorData.error || 'Failed to update project');
       }
+
+      // Clear auto-saved data and reset change tracking on successful submission
+      clearSavedData();
+      setHasUserMadeChanges(false);
+      
+      toast({
+        title: 'Project Updated',
+        description: 'Your project has been updated successfully.',
+      });
 
       router.push('/admin/projects');
       router.refresh();
     } catch (error) {
       console.error('Error updating project:', error);
-      setErrors({ title: error instanceof Error ? error.message : 'Failed to update project' });
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update project',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -263,19 +362,44 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/projects">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Projects
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Project</h1>
-          <p className="text-muted-foreground">
-            Editing: {project.title}
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/projects">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Projects
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Edit Project</h1>
+            <p className="text-muted-foreground">
+              Editing: {project.title}
+            </p>
+          </div>
         </div>
+
+        {hasSavedData() && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const draftData = restoreSavedData();
+              if (draftData) {
+                setFormData(draftData);
+                setHasUserMadeChanges(true);
+                toast({
+                  title: 'Draft restored',
+                  description: 'Your previous changes have been restored.',
+                  duration: 2000,
+                });
+              }
+            }}
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Restore Draft
+          </Button>
+        )}
       </div>
 
       {/* Form */}
@@ -289,53 +413,45 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="Enter project title"
-                className={errors.title ? "border-red-500" : ""}
-              />
-              {errors.title && (
-                <p className="text-sm text-red-600">{errors.title}</p>
-              )}
-            </div>
+            <FormField
+              label="Title"
+              name="title"
+              value={formData.title}
+              onChange={handleTitleChange}
+              placeholder="Enter project title"
+              required
+              error={errors.title}
+              maxLength={100}
+              hint="A clear, descriptive title for your project"
+            />
 
             {/* Slug */}
-            <div className="space-y-2">
-              <Label htmlFor="slug">URL Slug *</Label>
-              <Input
-                id="slug"
-                value={formData.slug}
-                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                placeholder="project-url-slug"
-                className={errors.slug ? "border-red-500" : ""}
-              />
-              <p className="text-sm text-muted-foreground">
-                Used in the project URL: /projects/{formData.slug || 'your-slug'}
-              </p>
-              {errors.slug && (
-                <p className="text-sm text-red-600">{errors.slug}</p>
-              )}
-            </div>
+            <FormField
+              label="URL Slug"
+              name="slug"
+              value={formData.slug}
+              onChange={handleSlugChange}
+              placeholder="project-url-slug"
+              required
+              error={errors.slug || slugError || undefined}
+              maxLength={50}
+              validator={validateSlugUnique}
+              hint={`Used in the project URL: /projects/${formData.slug || 'your-slug'}`}
+            />
 
             {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe your project..."
-                rows={4}
-                className={errors.description ? "border-red-500" : ""}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-600">{errors.description}</p>
-              )}
-            </div>
+            <FormField
+              label="Description"
+              name="description"
+              type="textarea"
+              value={formData.description || ''}
+              onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+              placeholder="Describe your project in detail... (optional)"
+              required={false}
+              error={errors.description}
+              rows={4}
+              hint="Optional: Provide a description of your project's goals and outcomes"
+            />
 
             {/* Status */}
             <div className="space-y-2">

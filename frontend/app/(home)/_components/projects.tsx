@@ -51,7 +51,7 @@ const Projects: React.FC<ProjectsProps> = async ({ ...props }) => {
               <CardHeader className="">
                 <CardTitle className="">{project.title}</CardTitle>
                 <p className="text-sm text-muted-foreground line-clamp-2">
-                  {project.description}
+                  {project.description || 'No description provided.'}
                 </p>
               </CardHeader>
               <CardFooter className="flex justify-between items-center">
