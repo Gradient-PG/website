@@ -128,11 +128,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </div>
 
           {/* Featured image */}
-          {project.imageUrl && (
+          {(project.imageBase64 || project.imageUrl) && (
             <div className="relative h-64 md:h-96 w-full mb-8 rounded-lg overflow-hidden">
               <Image
                 className="object-cover"
-                src={project.imageUrl}
+                src={project.imageBase64 || project.imageUrl!}
                 alt={project.title}
                 fill
                 priority

@@ -50,6 +50,7 @@ const Board: React.FC<BoardProps> = async ({ ...props }) => {
             >
               <Avatar
                 src={member.photoUrl}
+                base64={member.photoBase64}
                 name={member.name}
                 size="lg"
                 alt={`${member.name} photo`}

@@ -6,6 +6,7 @@ export interface Project {
   slug: string;
   description: string;
   imageUrl?: string;
+  imageBase64?: string; // Base64 encoded image (takes priority over imageUrl)
   tags?: string; // JSON or comma-separated
   status: 'planned' | 'active' | 'completed';
   links?: string; // JSON-encoded
@@ -19,6 +20,7 @@ export interface ProjectInput {
   slug: string;
   description: string;
   imageUrl?: string;
+  imageBase64?: string;
   tags?: string;
   status?: 'planned' | 'active' | 'completed';
   links?: string;
@@ -30,6 +32,7 @@ export interface BoardMember {
   name: string;
   role: string;
   photoUrl?: string;
+  photoBase64?: string; // Base64 encoded image (takes priority over photoUrl)
   bio?: string;
   socials?: string; // JSON-encoded
   displayOrder: number;
@@ -42,6 +45,7 @@ export interface BoardMemberInput {
   name: string;
   role: string;
   photoUrl?: string;
+  photoBase64?: string;
   bio?: string;
   socials?: string;
   displayOrder?: number;

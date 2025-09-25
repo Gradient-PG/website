@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 
 interface AvatarProps {
   src?: string;
+  base64?: string; // Base64 image takes priority over src
   name: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
@@ -18,7 +19,7 @@ const sizeClasses = {
   xl: 'w-24 h-24 text-xl',
 };
 
-export function Avatar({ src, name, size = 'md', className, alt }: AvatarProps) {
+export function Avatar({ src, base64, name, size = 'md', className, alt }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -51,7 +52,9 @@ export function Avatar({ src, name, size = 'md', className, alt }: AvatarProps) 
     return colors[index];
   };
 
-  const shouldShowPlaceholder = !src || imageError;
+  // Use base64 if available, otherwise use src
+  const imageSource = base64 || src;
+  const shouldShowPlaceholder = !imageSource || imageError;
 
   return (
     <div className={cn(
@@ -62,7 +65,7 @@ export function Avatar({ src, name, size = 'md', className, alt }: AvatarProps) 
     )}>
       {!shouldShowPlaceholder && (
         <img
-          src={src}
+          src={imageSource}
           alt={alt || `${name} avatar`}
           className="w-full h-full object-cover"
           onError={() => setImageError(true)}

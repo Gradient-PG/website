@@ -155,6 +155,7 @@ function BoardMemberCard({ member, featured = false }: { member: BoardMember; fe
         <div className="relative mx-auto mb-4">
           <Avatar
             src={member.photoUrl}
+            base64={member.photoBase64}
             name={member.name}
             size={featured ? 'xl' : 'lg'}
             alt={`${member.name} photo`}

@@ -13,11 +13,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from "@/hooks/use-toast";
 import ErrorBoundary from '@/components/ui/error-boundary';
 import Avatar from '@/components/ui/avatar';
+import ImageUpload from '@/components/ui/image-upload';
 
 interface FormData {
   name: string;
   role: string;
   photoUrl: string;
+  photoBase64: string;
   bio: string;
   socials: string;
   displayOrder: number;
@@ -43,6 +45,7 @@ export default function NewBoardMemberPage() {
     name: '',
     role: '',
     photoUrl: '',
+    photoBase64: '',
     bio: '',
     socials: '',
     displayOrder: 0,
@@ -126,11 +129,12 @@ export default function NewBoardMemberPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          socials: formData.socials ? formData.socials : '', // Send as string
-          displayOrder: Number(formData.displayOrder),
-        }),
+              body: JSON.stringify({
+        ...formData,
+        socials: formData.socials ? formData.socials : '', // Send as string
+        photoBase64: formData.photoBase64 || '', // Send base64 image
+        displayOrder: Number(formData.displayOrder),
+      }),
       });
 
       if (!response.ok) {
@@ -232,20 +236,44 @@ export default function NewBoardMemberPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="photoUrl">Photo URL</Label>
-                  <Input
-                    id="photoUrl"
-                    value={formData.photoUrl}
-                    onChange={(e) => setFormData(prev => ({ ...prev, photoUrl: e.target.value }))}
-                    placeholder="https://example.com/photo.jpg"
-                    className={errors.photoUrl ? "border-red-500" : ""}
-                  />
-                  {errors.photoUrl && (
-                    <p className="text-sm text-red-600">{errors.photoUrl}</p>
-                  )}
+                {/* Photo Upload Section */}
+                <div className="space-y-4">
+                  <Label>Photo</Label>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {/* Image Upload */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Upload Photo</Label>
+                      <ImageUpload
+                        value={formData.photoBase64}
+                        onChange={(base64) => setFormData(prev => ({ ...prev, photoBase64: base64 || '' }))}
+                        cropSize={200}
+                        maxSize={5}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Recommended: Upload for best quality
+                      </p>
+                    </div>
+
+                    {/* URL Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="photoUrl" className="text-sm font-medium">Or use Photo URL</Label>
+                      <Input
+                        id="photoUrl"
+                        value={formData.photoUrl}
+                        onChange={(e) => setFormData(prev => ({ ...prev, photoUrl: e.target.value }))}
+                        placeholder="https://example.com/photo.jpg"
+                        className={errors.photoUrl ? "border-red-500" : ""}
+                      />
+                      {errors.photoUrl && (
+                        <p className="text-sm text-red-600">{errors.photoUrl}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Alternative: External image URL
+                      </p>
+                    </div>
+                  </div>
                   <p className="text-sm text-muted-foreground">
-                    Optional: URL to the member's photo
+                    📸 Uploaded photos take priority over URLs and are stored securely in the database.
                   </p>
                 </div>
 
@@ -381,6 +409,7 @@ export default function NewBoardMemberPage() {
                 <div className="flex justify-center">
                   <Avatar
                     src={formData.photoUrl}
+                    base64={formData.photoBase64}
                     name={formData.name || 'Member Name'}
                     size="xl"
                   />

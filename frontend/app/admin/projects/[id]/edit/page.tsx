@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageUpload from '@/components/ui/image-upload';
 import type { Project, ProjectInput } from '@/lib/types';
 
 interface FormErrors {
@@ -17,6 +18,7 @@ interface FormErrors {
   description?: string;
   slug?: string;
   imageUrl?: string;
+  imageBase64?: string;
   status?: string;
   tags?: string;
   links?: string;
@@ -40,6 +42,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     slug: '',
     description: '',
     imageUrl: '',
+    imageBase64: '',
     tags: '',
     status: 'planned',
     links: '',
@@ -66,6 +69,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
           slug: projectData.slug,
           description: projectData.description,
           imageUrl: projectData.imageUrl || '',
+          imageBase64: projectData.imageBase64 || '',
           tags: projectData.tags || '',
           status: projectData.status,
           links: projectData.links || '',
@@ -178,6 +182,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
         body: JSON.stringify({
           ...formData,
           links: formData.links ? formData.links : '',
+          imageBase64: formData.imageBase64 || '',
           displayOrder: Number(formData.displayOrder),
         }),
       });
@@ -347,20 +352,46 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
               </Select>
             </div>
 
-            {/* Image URL */}
-            <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input
-                id="imageUrl"
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                placeholder="https://example.com/image.jpg"
-                className={errors.imageUrl ? "border-red-500" : ""}
-              />
-              {errors.imageUrl && (
-                <p className="text-sm text-red-600">{errors.imageUrl}</p>
-              )}
+            {/* Project Image Upload Section */}
+            <div className="space-y-4">
+              <Label>Project Image</Label>
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Image Upload */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Upload Image</Label>
+                  <ImageUpload
+                    value={formData.imageBase64}
+                    onChange={(base64) => setFormData(prev => ({ ...prev, imageBase64: base64 || '' }))}
+                    cropSize={400}
+                    maxSize={10}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Recommended: Upload for best quality (400×400px)
+                  </p>
+                </div>
+
+                {/* URL Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="imageUrl" className="text-sm font-medium">Or use Image URL</Label>
+                  <Input
+                    id="imageUrl"
+                    type="url"
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                    placeholder="https://example.com/image.jpg"
+                    className={errors.imageUrl ? "border-red-500" : ""}
+                  />
+                  {errors.imageUrl && (
+                    <p className="text-sm text-red-600">{errors.imageUrl}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Alternative: External image URL
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                🖼️ Uploaded images take priority over URLs and are stored securely in the database.
+              </p>
             </div>
 
             {/* Tags */}

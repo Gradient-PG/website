@@ -5,6 +5,7 @@ export interface IProject extends Document {
   slug: string;
   description: string;
   imageUrl?: string;
+  imageBase64?: string; // Base64 encoded image (takes priority over imageUrl)
   tags?: string;
   status: 'planned' | 'active' | 'completed';
   links?: string; // JSON string
@@ -32,6 +33,10 @@ const ProjectSchema = new Schema<IProject>({
     trim: true,
   },
   imageUrl: {
+    type: String,
+    trim: true,
+  },
+  imageBase64: {
     type: String,
     trim: true,
   },

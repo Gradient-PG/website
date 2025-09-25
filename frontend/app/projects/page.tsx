@@ -120,7 +120,7 @@ function ProjectCard({ project }: { project: Project }) {
       <div className="relative h-48 w-full">
         <Image
           className="rounded-t-lg object-cover"
-          src={project.imageUrl || "/images/placeholder-project.jpg"}
+          src={project.imageBase64 || project.imageUrl || "/images/placeholder-project.jpg"}
           alt={project.title}
           fill
         />

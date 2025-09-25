@@ -43,7 +43,7 @@ const Projects: React.FC<ProjectsProps> = async ({ ...props }) => {
               <div className="relative h-44 w-full md:h-32">
                 <Image
                   className="rounded-t-md object-cover"
-                  src={project.imageUrl || "/images/placeholder-project.jpg"}
+                  src={project.imageBase64 || project.imageUrl || "/images/placeholder-project.jpg"}
                   alt={project.title}
                   fill
                 />

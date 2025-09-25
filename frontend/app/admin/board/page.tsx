@@ -312,6 +312,7 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
                       <div className="flex items-center space-x-3">
                         <Avatar
                           src={member.photoUrl}
+                          base64={member.photoBase64}
                           name={member.name}
                           size="md"
                         />

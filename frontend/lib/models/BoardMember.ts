@@ -4,6 +4,7 @@ export interface IBoardMember extends Document {
   name: string;
   role: string;
   photoUrl?: string;
+  photoBase64?: string; // Base64 encoded image (takes priority over photoUrl)
   bio?: string;
   socials?: string; // JSON string
   displayOrder: number;
@@ -24,6 +25,10 @@ const BoardMemberSchema = new Schema<IBoardMember>({
     trim: true,
   },
   photoUrl: {
+    type: String,
+    trim: true,
+  },
+  photoBase64: {
     type: String,
     trim: true,
   },
