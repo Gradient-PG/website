@@ -73,6 +73,7 @@ const sampleBoardMembers: BoardMemberInput[] = [
   {
     name: "Sarah Chen",
     role: "President",
+    roleType: "board_member",
     photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=face",
     bio: "Third-year Computer Science major with a passion for machine learning and quantum computing. Previously interned at Google Research and published papers on neural network optimization.",
     socials: JSON.stringify({
@@ -87,6 +88,7 @@ const sampleBoardMembers: BoardMemberInput[] = [
   {
     name: "Marcus Rodriguez",
     role: "Vice President",
+    roleType: "board_member",
     photoUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face",
     bio: "Physics and Mathematics double major interested in theoretical physics and computational modeling. Leads our quantum computing initiatives and has experience with high-performance computing.",
     socials: JSON.stringify({
@@ -100,6 +102,7 @@ const sampleBoardMembers: BoardMemberInput[] = [
   {
     name: "Emily Johnson",
     role: "Secretary",
+    roleType: "board_member",
     photoUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face",
     bio: "Data Science major with expertise in statistical analysis and data visualization. Passionate about using data to solve environmental and social issues. Organizes our workshops and events.",
     socials: JSON.stringify({
@@ -113,6 +116,7 @@ const sampleBoardMembers: BoardMemberInput[] = [
   {
     name: "David Kim",
     role: "Treasurer",
+    roleType: "board_member",
     photoUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
     bio: "Economics and Computer Science major with interests in algorithmic trading and financial technology. Manages club finances and coordinates funding for research projects.",
     socials: JSON.stringify({
@@ -126,6 +130,7 @@ const sampleBoardMembers: BoardMemberInput[] = [
   {
     name: "Aisha Patel",
     role: "Research Coordinator",
+    roleType: "coordinator",
     photoUrl: "https://images.unsplash.com/photo-1594736797933-d0c29e4b0c40?w=400&h=400&fit=crop&crop=face",
     bio: "Bioengineering major focused on computational biology and medical AI. Coordinates research collaborations with faculty and organizes our bioinformatics study groups.",
     socials: JSON.stringify({
@@ -140,6 +145,7 @@ const sampleBoardMembers: BoardMemberInput[] = [
   {
     name: "James Thompson",
     role: "Workshop Coordinator",
+    roleType: "coordinator",
     photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
     bio: "Computer Engineering major with expertise in embedded systems and IoT. Organizes hands-on technical workshops and maintains our lab equipment.",
     socials: JSON.stringify({

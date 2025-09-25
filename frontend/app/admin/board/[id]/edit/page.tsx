@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ interface EditBoardMemberPageProps {
 interface FormData {
   name: string;
   role: string;
+  roleType: 'board_member' | 'coordinator';
   photoUrl: string;
   photoBase64: string;
   bio: string;
@@ -69,6 +71,7 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
   const [formData, setFormData] = useState<FormData>({
     name: '',
     role: '',
+    roleType: 'board_member',
     photoUrl: '',
     photoBase64: '',
     bio: '',
@@ -139,6 +142,7 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
         const originalData = {
           name: memberData.name || '',
           role: memberData.role || '',
+          roleType: memberData.roleType || 'board_member', // Default to board_member for existing records
           photoUrl: memberData.photoUrl || '',
           photoBase64: memberData.photoBase64 || '',
           bio: memberData.bio || '',
@@ -494,6 +498,23 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
                     maxLength={100}
                     hint="Position or role within the organization"
                   />
+                </div>
+
+                {/* Role Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="roleType">Member Type *</Label>
+                  <Select value={formData.roleType} onValueChange={(value: 'board_member' | 'coordinator') => setFormData(prev => ({ ...prev, roleType: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select member type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="board_member">Board Member</SelectItem>
+                      <SelectItem value="coordinator">Coordinator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Board Members have formal positions, Coordinators manage specific areas
+                  </p>
                 </div>
 
                 {/* Photo Upload Section */}

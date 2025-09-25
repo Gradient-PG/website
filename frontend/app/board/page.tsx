@@ -13,13 +13,16 @@ export const metadata: Metadata = {
   description: "Meet the passionate leaders driving our science club forward.",
 };
 
-// Server component to fetch active board members
-async function getActiveBoardMembers(): Promise<BoardMember[]> {
+// Server component to fetch active board members grouped by role type
+async function getActiveBoardMembersGrouped(): Promise<{
+  boardMembers: BoardMember[];
+  coordinators: BoardMember[];
+}> {
   try {
-    return await boardMembersRepo.findActive();
+    return await boardMembersRepo.findGroupedByRoleType(true);
   } catch (error) {
     console.error('Failed to fetch board members:', error);
-    return [];
+    return { boardMembers: [], coordinators: [] };
   }
 }
 
@@ -60,16 +63,8 @@ function formatSocialUrl(platform: string, value: string): string {
 }
 
 export default async function BoardPage() {
-  const boardMembers = await getActiveBoardMembers();
-
-  // Group members by leadership vs regular members
-  const leadershipRoles = ['President', 'Vice President', 'Secretary', 'Treasurer'];
-  const leadership = boardMembers.filter(member => 
-    leadershipRoles.includes(member.role)
-  );
-  const otherMembers = boardMembers.filter(member => 
-    !leadershipRoles.includes(member.role)
-  );
+  const { boardMembers, coordinators } = await getActiveBoardMembersGrouped();
+  const totalMembers = boardMembers.length + coordinators.length;
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -92,16 +87,16 @@ export default async function BoardPage() {
         </p>
       </div>
 
-      {/* Leadership Team */}
-      {leadership.length > 0 && (
+      {/* Board Members */}
+      {boardMembers.length > 0 && (
         <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 text-primary">Leadership Team</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {leadership
-              .sort((a, b) => {
-                const order = { 'President': 0, 'Vice President': 1, 'Secretary': 2, 'Treasurer': 3 };
-                return (order[a.role as keyof typeof order] || 99) - (order[b.role as keyof typeof order] || 99);
-              })
+          <h2 className="text-2xl font-bold mb-6 text-primary">Board Members</h2>
+          <p className="text-muted-foreground mb-6">
+            Our official board members who hold formal positions and oversee club operations.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {boardMembers
+              .sort((a, b) => a.displayOrder - b.displayOrder)
               .map((member) => (
                 <BoardMemberCard key={member.id} member={member} featured={true} />
               ))}
@@ -109,20 +104,25 @@ export default async function BoardPage() {
         </section>
       )}
 
-      {/* Other Members */}
-      {otherMembers.length > 0 && (
+      {/* Coordinators */}
+      {coordinators.length > 0 && (
         <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Team Members</h2>
+          <h2 className="text-2xl font-bold mb-6 text-green-600">Coordinators</h2>
+          <p className="text-muted-foreground mb-6">
+            Our dedicated coordinators who manage specific areas and initiatives within the club.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {otherMembers.map((member) => (
-              <BoardMemberCard key={member.id} member={member} />
-            ))}
+            {coordinators
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((member) => (
+                <BoardMemberCard key={member.id} member={member} />
+              ))}
           </div>
         </section>
       )}
 
       {/* No members message */}
-      {boardMembers.length === 0 && (
+      {totalMembers === 0 && (
         <div className="text-center py-12">
           <p className="text-lg text-muted-foreground">
             Board member information will be available soon.

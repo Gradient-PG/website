@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from "@/hooks/use-toast";
 import { useAutoSave } from '@/hooks/use-autosave';
 import { validateBoardMember } from '@/lib/validation';
@@ -21,6 +22,7 @@ import { FormField } from '@/components/ui/form-field';
 interface FormData {
   name: string;
   role: string;
+  roleType: 'board_member' | 'coordinator';
   photoUrl: string;
   photoBase64: string;
   bio: string;
@@ -48,6 +50,7 @@ export default function NewBoardMemberPage() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     role: '',
+    roleType: 'board_member',
     photoUrl: '',
     photoBase64: '',
     bio: '',
@@ -287,6 +290,23 @@ export default function NewBoardMemberPage() {
                     maxLength={100}
                     hint="Position or role within the organization"
                   />
+                </div>
+
+                {/* Role Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="roleType">Member Type *</Label>
+                  <Select value={formData.roleType} onValueChange={(value: 'board_member' | 'coordinator') => setFormData(prev => ({ ...prev, roleType: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select member type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="board_member">Board Member</SelectItem>
+                      <SelectItem value="coordinator">Coordinator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Board Members have formal positions, Coordinators manage specific areas
+                  </p>
                 </div>
 
                 {/* Photo Upload Section */}

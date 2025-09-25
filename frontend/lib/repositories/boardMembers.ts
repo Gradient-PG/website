@@ -14,6 +14,7 @@ export class BoardMembersRepository {
       id: doc._id?.toString() || doc.id,
       name: doc.name,
       role: doc.role,
+      roleType: doc.roleType || 'board_member', // Default to board_member for existing records
       photoUrl: doc.photoUrl || '',
       photoBase64: doc.photoBase64 || '',
       bio: doc.bio || '',
@@ -42,6 +43,35 @@ export class BoardMembersRepository {
     return this.findAll(true);
   }
 
+  // Get board members by role type
+  async findByRoleType(roleType: 'board_member' | 'coordinator', activeOnly: boolean = false): Promise<BoardMemberType[]> {
+    await this.ensureConnection();
+    
+    const filter: any = { roleType };
+    if (activeOnly) {
+      filter.active = true;
+    }
+
+    const members = await BoardMember.find(filter)
+      .sort({ displayOrder: 1, createdAt: 1 })
+      .lean();
+
+    return members.map(member => this.documentToBoardMember(member));
+  }
+
+  // Get board members grouped by role type
+  async findGroupedByRoleType(activeOnly: boolean = false): Promise<{
+    boardMembers: BoardMemberType[];
+    coordinators: BoardMemberType[];
+  }> {
+    const [boardMembers, coordinators] = await Promise.all([
+      this.findByRoleType('board_member', activeOnly),
+      this.findByRoleType('coordinator', activeOnly),
+    ]);
+
+    return { boardMembers, coordinators };
+  }
+
   // Get a board member by ID
   async findById(id: string): Promise<BoardMemberType | null> {
     await this.ensureConnection();
@@ -59,6 +89,7 @@ export class BoardMembersRepository {
     const member = new BoardMember({
       name: memberData.name,
       role: memberData.role,
+      roleType: memberData.roleType || 'board_member',
       photoUrl: memberData.photoUrl || '',
       photoBase64: memberData.photoBase64 || '',
       bio: memberData.bio || '',
