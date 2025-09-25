@@ -2,6 +2,7 @@ import { boardMembersRepo } from "@/lib/repositories";
 import type { BoardMember, MemberSocials } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Avatar from "@/components/ui/avatar";
 import Image from "next/image";
 import Link from "next/link";
 import { Metadata } from "next";
@@ -152,20 +153,12 @@ function BoardMemberCard({ member, featured = false }: { member: BoardMember; fe
     <Card className={`h-full flex flex-col ${featured ? 'border-primary shadow-lg' : ''}`}>
       <CardHeader className="text-center">
         <div className="relative mx-auto mb-4">
-          <div className={`relative rounded-full overflow-hidden ${featured ? 'w-24 h-24' : 'w-20 h-20'}`}>
-            {member.photoUrl ? (
-              <Image
-                alt={`${member.name} photo`}
-                fill
-                className="object-cover"
-                src={member.photoUrl}
-              />
-            ) : (
-              <div className="flex items-center justify-center w-full h-full bg-primary text-white font-bold text-2xl">
-                {member.name.charAt(0)}
-              </div>
-            )}
-          </div>
+          <Avatar
+            src={member.photoUrl}
+            name={member.name}
+            size={featured ? 'xl' : 'lg'}
+            alt={`${member.name} photo`}
+          />
         </div>
         
         <CardTitle className={featured ? "text-xl" : "text-lg"}>{member.name}</CardTitle>

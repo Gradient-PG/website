@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { boardMembersRepo } from "@/lib/repositories";
 import type { BoardMember, MemberSocials } from "@/lib/types";
+import Avatar from "@/components/ui/avatar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
@@ -47,20 +48,12 @@ const Board: React.FC<BoardProps> = async ({ ...props }) => {
               className="flex flex-row items-center gap-5 rounded-md bg-neutral-100 p-4 py-5"
               key={member.id}
             >
-              <div className="relative rounded-full bg-primary w-16 h-16 overflow-hidden">
-                {member.photoUrl ? (
-                <Image
-                    alt={`${member.name} photo`}
-                    fill
-                    className="object-cover"
-                    src={member.photoUrl}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full bg-primary text-white font-bold text-xl">
-                    {member.name.charAt(0)}
-                  </div>
-                )}
-              </div>
+              <Avatar
+                src={member.photoUrl}
+                name={member.name}
+                size="lg"
+                alt={`${member.name} photo`}
+              />
               <div className="flex flex-col rounded-md flex-1">
                 <h1 className="text-xl font-bold text-neutral-900">
                   {member.name}
