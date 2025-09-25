@@ -10,6 +10,8 @@ const nextConfig = {
       },
     ],
   },
+  // Ensure proper CSS loading
+  swcMinify: true,
 };
 
 module.exports = nextConfig;
