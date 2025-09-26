@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
 import { boardMembersRepo } from '@/lib/repositories';
+import { revalidatePath } from 'next/cache';
 
 // GET /api/admin/board/[id] - Get board member by ID
 export async function GET(
@@ -58,6 +59,12 @@ export async function PUT(
     }
 
     const member = await boardMembersRepo.update(params.id, memberData);
+    
+    // Revalidate pages that display board members
+    revalidatePath('/board');
+    revalidatePath('/');
+    revalidatePath('/api/board');
+    
     return NextResponse.json({ member });
   } catch (error: any) {
     console.error('Error updating board member:', error);
@@ -84,6 +91,12 @@ export async function DELETE(
 
   try {
     await boardMembersRepo.delete(params.id);
+    
+    // Revalidate pages that display board members
+    revalidatePath('/board');
+    revalidatePath('/');
+    revalidatePath('/api/board');
+    
     return NextResponse.json({ message: 'Board member deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting board member:', error);

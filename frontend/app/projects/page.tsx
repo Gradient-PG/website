@@ -8,6 +8,9 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 
+// Revalidate every 60 seconds
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Projects | Gradient Science Club",
   description: "Explore our current and completed research projects, workshops, and initiatives.",

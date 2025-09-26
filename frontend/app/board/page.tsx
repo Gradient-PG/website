@@ -8,6 +8,9 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { Mail, Linkedin, Github, Twitter, Globe, ExternalLink, ArrowLeft } from "lucide-react";
 
+// Revalidate every 60 seconds
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Board Members | Gradient Science Club",
   description: "Meet the passionate leaders driving our science club forward.",

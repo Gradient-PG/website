@@ -5,10 +5,12 @@ import { cn } from "@/lib/utils";
 import { boardMembersRepo } from "@/lib/repositories";
 import type { BoardMember, MemberSocials } from "@/lib/types";
 import Avatar from "@/components/ui/avatar";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 interface BoardProps extends React.HTMLProps<HTMLDivElement> {}
+
+// Revalidate every 60 seconds to show new members
+export const revalidate = 60;
 
 // Server component to fetch active board members
 async function getActiveBoardMembers(): Promise<BoardMember[]> {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
 import { boardMembersRepo } from '@/lib/repositories';
+import { revalidatePath } from 'next/cache';
 
 // GET /api/admin/board - List all board members
 export async function GET(request: NextRequest) {
@@ -47,6 +48,12 @@ export async function POST(request: NextRequest) {
     }
 
     const member = await boardMembersRepo.create(memberData);
+    
+    // Revalidate pages that display board members
+    revalidatePath('/board');
+    revalidatePath('/');
+    revalidatePath('/api/board');
+    
     return NextResponse.json({ member }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating board member:', error);

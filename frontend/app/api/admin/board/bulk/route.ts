@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
 import { boardMembersRepo } from '@/lib/repositories';
+import { revalidatePath } from 'next/cache';
 
 // POST /api/admin/board/bulk - Bulk operations on board members
 export async function POST(request: NextRequest) {
@@ -75,6 +76,13 @@ export async function POST(request: NextRequest) {
 
     const successCount = results.filter(r => r.success).length;
     const failureCount = results.filter(r => !r.success).length;
+
+    // Revalidate pages that display board members if any operations succeeded
+    if (successCount > 0) {
+      revalidatePath('/board');
+      revalidatePath('/');
+      revalidatePath('/api/board');
+    }
 
     return NextResponse.json({
       message: `Bulk ${action} completed`,
