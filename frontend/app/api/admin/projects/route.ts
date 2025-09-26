@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
 import { projectsRepo } from '@/lib/repositories';
+import { revalidatePath } from 'next/cache';
 
 // GET /api/admin/projects - List all projects
 export async function GET(request: NextRequest) {
@@ -64,6 +65,12 @@ export async function POST(request: NextRequest) {
     }
 
     const project = await projectsRepo.create(projectData);
+    
+    // Revalidate pages that display projects
+    revalidatePath('/projects');
+    revalidatePath('/');
+    revalidatePath('/api/projects');
+    
     return NextResponse.json({ project }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating project:', error);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
 import { projectsRepo } from '@/lib/repositories';
+import { revalidatePath } from 'next/cache';
 
 // POST /api/admin/projects/bulk - Bulk operations on projects
 export async function POST(request: NextRequest) {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     if (projectIds.length === 0) {
       return NextResponse.json(
-        { error: 'At least one project ID is required' },
+        { error: 'No projects selected' },
         { status: 400 }
       );
     }
@@ -96,19 +97,24 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    // Revalidate pages that display projects if any operations succeeded
+    if (results.success.length > 0) {
+      revalidatePath('/projects');
+      revalidatePath('/');
+      revalidatePath('/api/projects');
+    }
+
     return NextResponse.json({
       message: `Bulk ${action} completed`,
       results,
-      totalProcessed: projectIds.length,
-      successCount: results.success.length,
-      errorCount: results.errors.length,
+      summary: {
+        total: projectIds.length,
+        successful: results.success.length,
+        failed: results.errors.length,
+      },
     });
-
   } catch (error) {
-    console.error('Bulk operation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to perform bulk operation' },
-      { status: 500 }
-    );
+    console.error('Error processing bulk operation:', error);
+    return NextResponse.json({ error: 'Failed to process bulk operation' }, { status: 500 });
   }
 } 

@@ -243,7 +243,7 @@ Why not a headless CMS (Strapi, Sanity) or Git-based CMS (Decap)? They add setup
   - Added drag & drop image upload with client-side processing and validation
   - Base64 images take priority over external URLs for better reliability
   - Profile photos automatically cropped and resized to 200x200px at 80% JPEG quality
-  - Project images automatically cropped and resized to 400x400px at 80% JPEG quality
+  - Project images automatically cropped and resized to 720x720px at 80% JPEG quality
   - Comprehensive image management for both board members and projects
   - All displays (home, list pages, detail pages) prioritize uploaded images over external URLs
 - 2025-09-25: **Phase 3.5 Completed**: 

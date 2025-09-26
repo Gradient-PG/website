@@ -10,6 +10,9 @@ import Link from "next/link";
 
 interface ProjectsProps extends React.HTMLProps<HTMLDivElement> {}
 
+// Revalidate every 60 seconds to show new projects
+export const revalidate = 60;
+
 // Server component to fetch featured projects
 async function getFeauturedProjects(): Promise<Project[]> {
   try {

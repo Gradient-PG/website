@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
 import { projectsRepo } from '@/lib/repositories';
+import { revalidatePath } from 'next/cache';
 
-// GET /api/admin/projects/[id] - Get single project
+// GET /api/admin/projects/[id] - Get project by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -24,6 +25,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching project:', error);
     return NextResponse.json({ error: 'Failed to fetch project' }, { status: 500 });
+
   }
 }
 
@@ -69,6 +71,13 @@ export async function PUT(
     }
 
     const project = await projectsRepo.update(params.id, projectData);
+    
+    // Revalidate pages that display projects
+    revalidatePath('/projects');
+    revalidatePath('/');
+    revalidatePath('/api/projects');
+    revalidatePath(`/projects/${project.slug}`); // Also revalidate the specific project page
+    
     return NextResponse.json({ project });
   } catch (error: any) {
     console.error('Error updating project:', error);
@@ -98,6 +107,12 @@ export async function DELETE(
 
   try {
     await projectsRepo.delete(params.id);
+    
+    // Revalidate pages that display projects
+    revalidatePath('/projects');
+    revalidatePath('/');
+    revalidatePath('/api/projects');
+    
     return NextResponse.json({ message: 'Project deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting project:', error);
