@@ -9,9 +9,9 @@ export default function Home() {
     <main className="flex min-h-screen flex-col">
       <Hero />
       <Cards className="md:-mt-40" />
-      <Projects className="mt-16" />
-      <Board className="mt-16" />
-      <Footer className="mt-16" />
+      <Projects className="mt-8 md:mt-16" />
+      <Board className="mt-8 md:mt-16" />
+      <Footer className="mt-8 md:mt-16" />
     </main>
   );
 }

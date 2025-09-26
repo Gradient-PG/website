@@ -83,9 +83,9 @@ export default async function BoardPage() {
       </div>
 
       {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Our Board</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+      <div className="text-center mb-8 md:mb-12">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">Our Board</h1>
+        <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
           Meet the passionate students leading our science club and driving 
           innovation in research, education, and collaboration.
         </p>
@@ -93,12 +93,12 @@ export default async function BoardPage() {
 
       {/* Board Members */}
       {boardMembers.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 text-primary">Board Members</h2>
-          <p className="text-muted-foreground mb-6">
+        <section className="mb-8 md:mb-12">
+          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-primary">Board Members</h2>
+          <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
             Our official board members who hold formal positions and oversee club operations.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {boardMembers
               .sort((a, b) => a.displayOrder - b.displayOrder)
               .map((member) => (
@@ -110,12 +110,12 @@ export default async function BoardPage() {
 
       {/* Coordinators */}
       {coordinators.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 text-green-600">Coordinators</h2>
-          <p className="text-muted-foreground mb-6">
+        <section className="mb-8 md:mb-12">
+          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-primary">Coordinators</h2>
+          <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
             Our dedicated coordinators who manage specific areas and initiatives within the club.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {coordinators
               .sort((a, b) => a.displayOrder - b.displayOrder)
               .map((member) => (
@@ -127,17 +127,17 @@ export default async function BoardPage() {
 
       {/* No members message */}
       {totalMembers === 0 && (
-        <div className="text-center py-12">
-          <p className="text-lg text-muted-foreground">
+        <div className="text-center py-8 md:py-12">
+          <p className="text-base md:text-lg text-muted-foreground">
             Board member information will be available soon.
           </p>
         </div>
       )}
 
       {/* Call to action */}
-      <div className="text-center mt-16 p-8 bg-gray-50 rounded-lg">
-        <h3 className="text-2xl font-bold mb-4">Interested in Joining Our Team?</h3>
-        <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+      <div className="text-center mt-12 md:mt-16 p-6 md:p-8 bg-gray-50 rounded-lg">
+        <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Interested in Joining Our Team?</h3>
+        <p className="text-base md:text-lg text-muted-foreground mb-4 md:mb-6 max-w-2xl mx-auto">
           We're always looking for passionate students to join our board and help 
           lead exciting scientific initiatives. Text us to learn about opportunities!
         </p>
