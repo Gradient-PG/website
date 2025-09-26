@@ -55,7 +55,7 @@ export default function Hero() {
 
         <div className="flex max-w-full flex-col items-start gap-5 md:w-1/2">
           <h1 className="text-4xl font-bold text-slate-50">
-            Gradient<br></br>Research Group
+            Gradient<br></br>Science Club
           </h1>
           <p className="text-lg text-slate-300">
             We are a team of passionate students who are dedicated to exploring

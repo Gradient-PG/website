@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Metadata } from "next";
 import { Mail, Linkedin, Github, Twitter, Globe, ExternalLink, ArrowLeft } from "lucide-react";
+import urls from "@/public/data/urls.json";
 
 // Revalidate every 60 seconds
 export const revalidate = 60;
@@ -138,10 +139,12 @@ export default async function BoardPage() {
         <h3 className="text-2xl font-bold mb-4">Interested in Joining Our Team?</h3>
         <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
           We're always looking for passionate students to join our board and help 
-          lead exciting scientific initiatives. Reach out to learn about opportunities!
+          lead exciting scientific initiatives. Text us to learn about opportunities!
         </p>
-        <Button size="lg">
-          Contact Leadership
+        <Button size="lg" asChild>
+          <a href={urls.FB_URL} target="_blank" rel="noopener noreferrer">
+            Text Us On Facebook
+          </a>
         </Button>
       </div>
     </div>
