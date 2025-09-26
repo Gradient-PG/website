@@ -13,7 +13,7 @@ interface FooterProps extends React.HTMLProps<HTMLDivElement> {}
 
 const Footer: React.FC<FooterProps> = ({ ...props }) => {
   return (
-    <div className={cn("relative min-h-80 pb-4", props.className)}>
+    <div className={cn("relative min-h-80 overflow-hidden", props.className)}>
       <Image
         src={wave}
         alt=""

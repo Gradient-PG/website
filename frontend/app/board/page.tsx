@@ -173,7 +173,7 @@ function BoardMemberCard({ member, featured = false }: { member: BoardMember; fe
 
       <CardContent className="flex-1 flex flex-col">
         {member.bio && (
-          <p className="text-muted-foreground text-sm mb-4 flex-1">
+          <p className="text-muted-foreground text-sm mb-4 flex-1 text-justify">
             {member.bio}
           </p>
         )}

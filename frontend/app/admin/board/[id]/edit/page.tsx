@@ -635,7 +635,7 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
                         }
                       />
                       <Label htmlFor="active" className="text-sm font-normal">
-                        Active board member
+                        Active member
                       </Label>
                     </div>
                     <p className="text-sm text-muted-foreground">
