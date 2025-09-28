@@ -85,6 +85,7 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
   const [isDeleting, setIsDeleting] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
   const handleSelectMember = (memberId: string, checked: boolean) => {
     const newSelected = new Set(selectedMembers);
@@ -225,6 +226,7 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
 
   const handleBulkStatusUpdate = async (active: boolean) => {
     try {
+      setIsBulkUpdating(true);
       const response = await fetch('/api/admin/board/bulk', {
         method: 'POST',
         headers: {
@@ -233,7 +235,7 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
         body: JSON.stringify({
           action: 'updateStatus',
           memberIds: Array.from(selectedMembers),
-          data: { active }
+          data: { active },
         }),
       });
 
@@ -246,14 +248,14 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
       if (result.errors && result.errors.length > 0) {
         toast({
           title: "Partial Success",
-          description: `${result.success.length} members updated, but ${result.errors.length} failed.`,
+          description: `Updated ${result.success.length} members, ${result.errors.length} failed.`,
           variant: "destructive",
         });
       } else {
-      toast({
+        toast({
           title: "Success",
-          description: `${selectedMembers.size} members updated to ${active ? 'active' : 'inactive'}.`,
-      });
+          description: `Updated ${result.success.length} members to ${active ? 'active' : 'inactive'}.`,
+        });
       }
 
       setSelectedMembers(new Set());
@@ -265,6 +267,61 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
         description: "Failed to update member status. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
+  const handleBulkRoleTypeUpdate = async (roleType: 'board_member' | 'coordinator' | 'member') => {
+    try {
+      setIsBulkUpdating(true);
+      const response = await fetch('/api/admin/board/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateRoleType',
+          memberIds: Array.from(selectedMembers),
+          data: { roleType },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update member role type');
+      }
+
+      const result = await response.json();
+      
+      if (result.errors && result.errors.length > 0) {
+        toast({
+          title: "Partial Success",
+          description: `Updated ${result.success.length} members, ${result.errors.length} failed.`,
+          variant: "destructive",
+        });
+      } else {
+        const roleTypeNames = {
+          'board_member': 'Board Member',
+          'coordinator': 'Coordinator',
+          'member': 'Member'
+        };
+        toast({
+          title: "Success",
+          description: `Updated ${result.success.length} members to ${roleTypeNames[roleType]}.`,
+        });
+      }
+
+      setSelectedMembers(new Set());
+      onMembersChange();
+    } catch (error) {
+      console.error('Error updating member role type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update member role type. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkUpdating(false);
     }
   };
 
@@ -284,9 +341,9 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
                 <>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" disabled={isBulkUpdating}>
                         Update Status ({selectedMembers.size})
-                </Button>
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem onClick={() => handleBulkStatusUpdate(true)}>
@@ -297,15 +354,34 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" disabled={isBulkUpdating}>
+                        Change Role ({selectedMembers.size})
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleBulkRoleTypeUpdate('board_member')}>
+                        Set to Board Member
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkRoleTypeUpdate('coordinator')}>
+                        Set to Coordinator
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkRoleTypeUpdate('member')}>
+                        Set to Member
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
+                      <Button
+                        variant="outline"
+                        size="sm"
                         disabled={isBulkDeleting}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
                         Delete ({selectedMembers.size})
                       </Button>
                     </AlertDialogTrigger>
@@ -536,7 +612,7 @@ function BoardMembersManager() {
 
     // Apply role filter
     if (roleFilter !== 'all') {
-      filtered = filtered.filter(member => member.role === roleFilter);
+      filtered = filtered.filter(member => member.roleType === roleFilter);
     }
 
     setFilteredMembers(filtered);
@@ -545,9 +621,6 @@ function BoardMembersManager() {
   if (isLoading) {
     return <BoardMembersLoadingSkeleton />;
   }
-
-  // Get unique roles for filter
-  const uniqueRoles = Array.from(new Set(members.map(m => m.role))).sort();
 
   // Calculate stats by member type
   const boardMembers = members.filter(m => m.roleType === 'board_member');
@@ -647,11 +720,9 @@ function BoardMembersManager() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                {uniqueRoles.map(role => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
+                <SelectItem value="board_member">Board Member</SelectItem>
+                <SelectItem value="coordinator">Coordinator</SelectItem>
+                <SelectItem value="member">Member</SelectItem>
               </SelectContent>
             </Select>
           </div>

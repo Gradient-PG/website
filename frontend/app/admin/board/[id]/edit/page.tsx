@@ -74,7 +74,7 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
     photoUrl: '',
     photoBase64: '',
     bio: '',
-    socials: '',
+    socials: '{"email": "", "linkedin": "", "github": ""}',
     active: true,
   });
 
@@ -144,8 +144,7 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
           photoUrl: memberData.photoUrl || '',
           photoBase64: memberData.photoBase64 || '',
           bio: memberData.bio || '',
-          socials: memberData.socials || '', // Load as string
-          displayOrder: memberData.displayOrder || 0,
+          socials: memberData.socials || '{"email": "", "linkedin": "", "github": ""}', // Prefill with empty structure
           active: memberData.active !== undefined ? memberData.active : true,
         };
 

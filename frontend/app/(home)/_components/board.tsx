@@ -36,7 +36,15 @@ async function getActiveBoardMembersGrouped(): Promise<{
 function parseSocials(socials?: string): MemberSocials {
   if (!socials) return {};
   try {
-    return JSON.parse(socials);
+    const parsed = JSON.parse(socials);
+    // Filter out empty string values
+    const filtered: MemberSocials = {};
+    Object.entries(parsed).forEach(([key, value]) => {
+      if (value && typeof value === 'string' && value.trim() !== '') {
+        filtered[key] = value as string;
+      }
+    });
+    return filtered;
   } catch {
     return {};
   }
@@ -180,6 +188,13 @@ const Board: React.FC<BoardProps> = async ({ ...props }) => {
       {totalMembers === 0 && (
         <div className="text-center mt-8">
           <p className="text-muted-foreground">No team member information available.</p>
+        </div>
+      )}
+      
+      {/* "And many more" text for 6+ members */}
+      {members.length >= 6 && (
+        <div className="text-center mt-6">
+          <p className="text-sm text-muted-foreground italic">...and many more</p>
         </div>
       )}
       

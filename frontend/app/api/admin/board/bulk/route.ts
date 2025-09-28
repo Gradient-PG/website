@@ -83,6 +83,27 @@ export async function POST(request: NextRequest) {
         }
         break;
 
+      case 'updateRoleType':
+        if (!data?.roleType || !['board_member', 'coordinator', 'member'].includes(data.roleType)) {
+          return NextResponse.json(
+            { error: 'Valid roleType (board_member, coordinator, or member) is required for updateRoleType action' },
+            { status: 400 }
+          );
+        }
+
+        for (const memberId of memberIds) {
+          try {
+            await boardMembersRepo.update(memberId, { roleType: data.roleType });
+            results.success.push(memberId);
+          } catch (error) {
+            results.errors.push({
+              id: memberId,
+              error: error instanceof Error ? error.message : 'Failed to update role type',
+            });
+          }
+        }
+        break;
+
       default:
         return NextResponse.json(
           { error: `Unknown action: ${action}` },

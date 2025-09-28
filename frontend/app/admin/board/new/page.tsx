@@ -53,7 +53,7 @@ export default function NewBoardMemberPage() {
     photoUrl: '',
     photoBase64: '',
     bio: '',
-    socials: '',
+    socials: '{"email": "", "linkedin": "", "github": ""}',
     active: true,
   });
 

@@ -35,7 +35,15 @@ async function getActiveBoardMembersGrouped(): Promise<{
 function parseSocials(socials?: string): MemberSocials {
   if (!socials) return {};
   try {
-    return JSON.parse(socials);
+    const parsed = JSON.parse(socials);
+    // Filter out empty string values
+    const filtered: MemberSocials = {};
+    Object.entries(parsed).forEach(([key, value]) => {
+      if (value && typeof value === 'string' && value.trim() !== '') {
+        filtered[key] = value as string;
+      }
+    });
+    return filtered;
   } catch {
     return {};
   }
