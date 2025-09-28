@@ -1,20 +1,17 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, UserCheck, UserX, X, Check } from 'lucide-react';
+import { Plus, Eye, Search, Filter, Trash2, Edit, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from "@/hooks/use-toast";
+import { BoardMember } from '@/lib/types';
+import Avatar from '@/components/ui/avatar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +21,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
-import Avatar from '@/components/ui/avatar';
-import type { BoardMember } from '@/lib/types';
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { SortableList } from '@/components/ui/sortable-list';
 
 interface BoardMembersTableProps {
   members: BoardMember[];
@@ -36,14 +39,16 @@ interface BoardMembersTableProps {
 
 function MemberStatusBadge({ active }: { active: boolean }) {
   return (
-    <Badge 
-      variant="outline" 
-      className={active 
-        ? 'bg-green-100 text-green-800 border-green-200' 
-        : 'bg-gray-100 text-gray-800 border-gray-200'
-      }
-    >
+    <Badge className={active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
       {active ? 'Active' : 'Inactive'}
+    </Badge>
+  );
+}
+
+function MemberRoleTypeBadge({ roleType }: { roleType: 'board_member' | 'coordinator' }) {
+  return (
+    <Badge className={roleType === 'board_member' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}>
+      {roleType === 'board_member' ? 'Board Member' : 'Coordinator'}
     </Badge>
   );
 }
@@ -51,10 +56,9 @@ function MemberStatusBadge({ active }: { active: boolean }) {
 function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps) {
   const { toast } = useToast();
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [memberToDelete, setMemberToDelete] = useState<BoardMember | null>(null);
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleSelectMember = (memberId: string, checked: boolean) => {
     const newSelected = new Set(selectedMembers);
@@ -74,312 +78,331 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
     }
   };
 
-  const handleDeleteMember = async (member: BoardMember) => {
-    setMemberToDelete(member);
-    setDeleteDialogOpen(true);
+  const handleReorder = async (reorderedMembers: BoardMember[]) => {
+    try {
+      // Create updates array with new display orders
+      const updates = reorderedMembers.map((member, index) => ({
+        id: member.id,
+        displayOrder: index + 1
+      }));
+
+      const response = await fetch('/api/admin/board/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateDisplayOrder',
+          memberIds: updates.map(u => u.id),
+          data: { updates }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update member order');
+      }
+
+      toast({
+        title: "Success",
+        description: "Member order updated successfully.",
+      });
+
+      // Only refresh data from server after successful save
+      onMembersChange();
+    } catch (error) {
+      console.error('Error updating member order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update member order. Please try again.",
+        variant: "destructive",
+      });
+      throw error; // Re-throw to let SortableList handle the revert
+    }
   };
 
-  const confirmDeleteMember = async () => {
-    if (!memberToDelete) return;
-
-    setIsDeleting(true);
+  const handleDeleteMember = async (memberId: string) => {
     try {
-      const response = await fetch(`/api/admin/board/${memberToDelete.id}`, {
+      setIsDeleting(true);
+      const response = await fetch(`/api/admin/board/${memberId}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete board member');
+        throw new Error('Failed to delete member');
       }
 
       toast({
-        title: "Board member deleted",
-        description: `${memberToDelete.name} has been deleted successfully.`,
+        title: "Success",
+        description: "Board member deleted successfully.",
       });
 
       onMembersChange();
     } catch (error) {
+      console.error('Error deleting member:', error);
       toast({
         title: "Error",
-        description: "Failed to delete board member. Please try again.",
+        description: "Failed to delete member. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsDeleting(false);
-      setDeleteDialogOpen(false);
       setMemberToDelete(null);
     }
   };
 
-  const handleBulkDelete = () => {
-    if (selectedMembers.size === 0) return;
-    setBulkDeleteDialogOpen(true);
-  };
-
-  const handleBulkAction = (action: string) => {
-    if (selectedMembers.size === 0) {
-      toast({
-        title: "No selection",
-        description: "Please select board members first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (action === 'delete') {
-      handleBulkDelete();
-      return;
-    }
-
-    // Handle status changes
-    performBulkAction(action);
-  };
-
-  const performBulkAction = async (action: string) => {
+  const handleBulkDelete = async () => {
     try {
+      setIsBulkDeleting(true);
       const response = await fetch('/api/admin/board/bulk', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          action,
+          action: 'delete',
           memberIds: Array.from(selectedMembers),
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to ${action} board members`);
+        throw new Error('Failed to delete members');
       }
 
-      const data = await response.json();
+      const result = await response.json();
       
+      if (result.errors && result.errors.length > 0) {
+        toast({
+          title: "Partial Success",
+          description: `${result.success.length} members deleted, but ${result.errors.length} failed.`,
+          variant: "destructive",
+        });
+      } else {
       toast({
-        title: "Bulk operation completed",
-        description: `${data.summary.successful} board members ${action}d successfully.`,
+          title: "Success",
+          description: `${selectedMembers.size} members deleted successfully.`,
       });
+      }
 
       setSelectedMembers(new Set());
       onMembersChange();
     } catch (error) {
+      console.error('Error deleting members:', error);
       toast({
         title: "Error",
-        description: `Failed to ${action} board members. Please try again.`,
+        description: "Failed to delete members. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
-  const confirmBulkDelete = async () => {
-    await performBulkAction('delete');
-    setBulkDeleteDialogOpen(false);
-  };
-
-  const handleToggleStatus = async (member: BoardMember) => {
+  const handleBulkStatusUpdate = async (active: boolean) => {
     try {
-      const action = member.active ? 'deactivate' : 'activate';
-      
-      // Call the bulk API with just this member's ID
       const response = await fetch('/api/admin/board/bulk', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          action,
-          memberIds: [member.id],
+          action: 'updateStatus',
+          memberIds: Array.from(selectedMembers),
+          data: { active }
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to ${action} board member`);
+        throw new Error('Failed to update member status');
       }
 
-      const data = await response.json();
+      const result = await response.json();
       
+      if (result.errors && result.errors.length > 0) {
+        toast({
+          title: "Partial Success",
+          description: `${result.success.length} members updated, but ${result.errors.length} failed.`,
+          variant: "destructive",
+        });
+      } else {
       toast({
-        title: `Board member ${action}d`,
-        description: `${member.name} has been ${action}d successfully.`,
+          title: "Success",
+          description: `${selectedMembers.size} members updated to ${active ? 'active' : 'inactive'}.`,
       });
+      }
 
+      setSelectedMembers(new Set());
       onMembersChange();
     } catch (error) {
+      console.error('Error updating member status:', error);
       toast({
         title: "Error",
-        description: `Failed to ${member.active ? 'deactivate' : 'activate'} board member.`,
+        description: "Failed to update member status. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  if (members.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground mb-4">No board members found</p>
-          <Button asChild>
-            <Link href="/admin/board/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add First Board Member
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const isIndeterminate = selectedMembers.size > 0 && selectedMembers.size < members.length;
-  const isAllSelected = selectedMembers.size === members.length && members.length > 0;
-
   return (
     <>
       <Card>
-        <CardContent className="p-0">
-          {/* Bulk Actions Bar */}
-          {selectedMembers.size > 0 && (
-            <div className="flex items-center justify-between p-4 bg-muted/50 border-b">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">
-                  {selectedMembers.size} selected
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedMembers(new Set())}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Board Members</CardTitle>
+              <CardDescription>
+                Manage your board members and coordinators. Drag and drop to reorder.
+              </CardDescription>
               </div>
               <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkAction('activate')}
-                >
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Activate
+              {selectedMembers.size > 0 && (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        Update Status ({selectedMembers.size})
                 </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleBulkStatusUpdate(true)}>
+                        Set to Active
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkStatusUpdate(false)}>
+                        Set to Inactive
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleBulkAction('deactivate')}
-                >
-                  <UserX className="h-4 w-4 mr-2" />
-                  Deactivate
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkAction('delete')}
-                  className="text-red-600 hover:text-red-700"
+                        disabled={isBulkDeleting}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                        Delete ({selectedMembers.size})
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Board Members</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {selectedMembers.size} selected members? 
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleBulkDelete}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete Members
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+              
+              <Button asChild>
+                <Link href="/admin/board/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Member
+                </Link>
                 </Button>
               </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {members.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No board members found.</p>
+              <Button asChild>
+                <Link href="/admin/board/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create your first member
+                </Link>
+              </Button>
             </div>
-          )}
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b bg-muted/50">
-                <tr>
-                  <th className="text-left p-4 font-medium w-12">
+          ) : (
+            <div className="space-y-4">
+              {/* Select All */}
+              <div className="flex items-center space-x-2 pb-2 border-b">
                     <Checkbox
-                      checked={isAllSelected}
-                      ref={(el) => {
-                        if (el) (el as any).indeterminate = isIndeterminate;
-                      }}
+                  checked={selectedMembers.size === members.length && members.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
-                  </th>
-                  <th className="text-left p-4 font-medium">Member</th>
-                  <th className="text-left p-4 font-medium">Role</th>
-                  <th className="text-left p-4 font-medium">Status</th>
-                  <th className="text-left p-4 font-medium">Order</th>
-                  <th className="text-left p-4 font-medium">Updated</th>
-                  <th className="text-right p-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.map((member) => (
-                  <tr key={member.id} className="border-b hover:bg-muted/50">
-                    <td className="p-4">
+                <span className="text-sm font-medium">
+                  Select All ({members.length} members)
+                </span>
+              </div>
+
+              {/* Sortable Members List */}
+              <SortableList
+                items={members}
+                onReorder={handleReorder}
+                getItemId={(member) => member.id}
+                className="space-y-2"
+              >
+                {(member) => (
+                  <div className="flex items-center space-x-4 p-4 border rounded-lg bg-white hover:bg-gray-50">
                       <Checkbox
                         checked={selectedMembers.has(member.id)}
                         onCheckedChange={(checked) => 
                           handleSelectMember(member.id, checked as boolean)
                         }
                       />
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center space-x-3">
+                    
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
                         <Avatar
                           src={member.photoUrl}
                           base64={member.photoBase64}
                           name={member.name}
                           size="md"
                         />
-                        <div>
-                          <div className="font-medium">{member.name}</div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">{member.name}</h3>
+                        <p className="text-sm text-muted-foreground">{member.role}</p>
                           {member.bio && (
-                            <div className="text-sm text-muted-foreground line-clamp-1">
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
                               {member.bio}
-                            </div>
+                          </p>
                           )}
+                        <div className="flex items-center space-x-2 mt-1">
+                          <MemberStatusBadge active={member.active} />
+                          <MemberRoleTypeBadge roleType={member.roleType} />
                         </div>
                       </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-medium">{member.role}</div>
-                    </td>
-                    <td className="p-4">
-                      <MemberStatusBadge active={member.active} />
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-muted-foreground">
-                        {member.displayOrder}
-                      </div>
-                    </td>
-                    <td className="p-4">
+                      
                       <div className="text-sm text-muted-foreground">
                         {new Date(member.updatedAt).toLocaleDateString()}
                       </div>
-                    </td>
-                    <td className="p-4 text-right">
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/board/${member.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href="/board" target="_blank">
-                              <Eye className="h-4 w-4 mr-2" />
-                              View on Site
-                            </Link>
-                          </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link href={`/admin/board/${member.id}/edit`}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </Link>
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem 
-                            onClick={() => handleToggleStatus(member)}
-                            className={member.active ? "text-orange-600" : "text-green-600"}
-                          >
-                            {member.active ? (
-                              <>
-                                <UserX className="h-4 w-4 mr-2" />
-                                Deactivate
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Activate
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteMember(member)}
+                            onClick={() => setMemberToDelete(member.id)}
                             className="text-red-600"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
@@ -387,53 +410,32 @@ function BoardMembersTable({ members, onMembersChange }: BoardMembersTableProps)
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                )}
+              </SortableList>
           </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={!!memberToDelete} onOpenChange={() => setMemberToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Board Member</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{memberToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete this board member? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmDeleteMember}
-              className="bg-red-600 hover:bg-red-700"
+              onClick={() => memberToDelete && handleDeleteMember(memberToDelete)}
               disabled={isDeleting}
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Bulk Delete Confirmation Dialog */}
-      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Multiple Board Members</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedMembers.size} board member(s)? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmBulkDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete {selectedMembers.size} Member(s)
+              {isDeleting ? 'Deleting...' : 'Delete Member'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

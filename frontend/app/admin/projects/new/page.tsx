@@ -26,7 +26,6 @@ interface FormErrors {
   status?: string;
   tags?: string;
   links?: string;
-  displayOrder?: string;
 }
 
 export default function NewProjectPage() {
@@ -45,7 +44,7 @@ export default function NewProjectPage() {
     tags: '',
     status: 'planned',
     links: '',
-    displayOrder: 0,
+
   });
 
   // Track if user has made changes (for new forms, any non-empty content counts as changes)
@@ -183,7 +182,7 @@ export default function NewProjectPage() {
           ...formData,
           links: formData.links ? formData.links : '',
           imageBase64: formData.imageBase64 || '',
-          displayOrder: Number(formData.displayOrder),
+          displayOrder: 0, // Default display order, will be managed by drag-and-drop
         }),
       });
 
@@ -389,17 +388,6 @@ export default function NewProjectPage() {
               rows={3}
               error={errors.links}
               hint={`JSON object of project links. Example: {"github": "...", "website": "...", "demo": "..."}`}
-            />
-
-            {/* Display Order */}
-            <FormField
-              label="Display Order"
-              name="displayOrder"
-              type="number"
-              value={formData.displayOrder || 0}
-              onChange={(value) => setFormData(prev => ({ ...prev, displayOrder: parseInt(value) || 0 }))}
-              error={errors.displayOrder}
-              hint="Lower numbers appear first in the project list (0 = highest priority)"
             />
 
             {/* Form Actions */}

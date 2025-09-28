@@ -26,7 +26,6 @@ interface FormErrors {
   status?: string;
   tags?: string;
   links?: string;
-  displayOrder?: string;
 }
 
 interface EditProjectPageProps {
@@ -53,7 +52,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     tags: '',
     status: 'planned',
     links: '',
-    displayOrder: 0,
+
   });
 
   // Track if user has made changes
@@ -116,7 +115,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
           tags: projectData.tags || '',
           status: projectData.status,
           links: projectData.links || '',
-          displayOrder: projectData.displayOrder || 0,
+  
         };
 
         // Store original data for comparison
@@ -257,7 +256,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
           ...formData,
           links: formData.links ? formData.links : '',
           imageBase64: formData.imageBase64 || '',
-          displayOrder: Number(formData.displayOrder),
+  
         }),
       });
 
@@ -540,25 +539,6 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
               </p>
               {errors.links && (
                 <p className="text-sm text-red-600">{errors.links}</p>
-              )}
-            </div>
-
-            {/* Display Order */}
-            <div className="space-y-2">
-              <Label htmlFor="displayOrder">Display Order</Label>
-              <Input
-                id="displayOrder"
-                type="number"
-                min="0"
-                value={formData.displayOrder}
-                onChange={(e) => setFormData(prev => ({ ...prev, displayOrder: parseInt(e.target.value) || 0 }))}
-                className={errors.displayOrder ? "border-red-500" : ""}
-              />
-              <p className="text-sm text-muted-foreground">
-                Lower numbers appear first in the list
-              </p>
-              {errors.displayOrder && (
-                <p className="text-sm text-red-600">{errors.displayOrder}</p>
               )}
             </div>
 

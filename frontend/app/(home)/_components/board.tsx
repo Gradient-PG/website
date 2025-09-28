@@ -102,36 +102,36 @@ const Board: React.FC<BoardProps> = async ({ ...props }) => {
             {coordinators
               .sort((a, b) => a.displayOrder - b.displayOrder)
               .map((member) => {
-                const socials = parseSocials(member.socials);
-                return (
-                  <div
+          const socials = parseSocials(member.socials);
+          return (
+            <div
                     className="flex flex-row items-center gap-3 md:gap-5 rounded-md bg-neutral-100 p-3 md:p-4 py-4 md:py-5"
-                    key={member.id}
-                  >
-                    <Avatar
-                      src={member.photoUrl}
-                      base64={member.photoBase64}
-                      name={member.name}
-                      size="lg"
-                      alt={`${member.name} photo`}
-                    />
-                    <div className="flex flex-col rounded-md flex-1">
+              key={member.id}
+            >
+              <Avatar
+                src={member.photoUrl}
+                base64={member.photoBase64}
+                name={member.name}
+                size="lg"
+                alt={`${member.name} photo`}
+              />
+              <div className="flex flex-col rounded-md flex-1">
                       <h1 className="text-lg md:text-xl font-bold text-neutral-900">
-                        {member.name}
-                      </h1>
+                  {member.name}
+                </h1>
                       <h2 className="text-sm md:text-base font-semibold text-primary">
-                        {member.role}
-                      </h2>
-                      {member.bio && (
+                  {member.role}
+                </h2>
+                {member.bio && (
                         <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
-                          {member.bio}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
+                    {member.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
         </div>
       )}
 

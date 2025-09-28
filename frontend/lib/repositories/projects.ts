@@ -38,6 +38,30 @@ export class ProjectsRepository {
     return projects.map(doc => this.documentToProject(doc));
   }
 
+  // Get projects sorted by status groups (planned > active > completed) then by display order
+  async findAllByStatusGroups(): Promise<ProjectType[]> {
+    await this.ensureConnection();
+    
+    const projects = await Project.find({})
+      .lean();
+    
+    const projectsTyped = projects.map(doc => this.documentToProject(doc));
+    
+    // Sort by status priority then by display order within each status
+    return projectsTyped.sort((a, b) => {
+      const statusOrder = { 'planned': 0, 'active': 1, 'completed': 2 };
+      const aStatusOrder = statusOrder[a.status as keyof typeof statusOrder] ?? 3;
+      const bStatusOrder = statusOrder[b.status as keyof typeof statusOrder] ?? 3;
+      
+      if (aStatusOrder !== bStatusOrder) {
+        return aStatusOrder - bStatusOrder;
+      }
+      
+      // Within same status, sort by display order
+      return a.displayOrder - b.displayOrder;
+    });
+  }
+
   // Get active projects for public display
   async findActive(): Promise<ProjectType[]> {
     return this.findAll('active');
@@ -127,18 +151,10 @@ export class ProjectsRepository {
     }
   }
 
-  // Get featured projects (for homepage)
-  async findFeatured(limit: number = 3): Promise<ProjectType[]> {
-    await this.ensureConnection();
-    
-    const projects = await Project.find({ 
-      status: { $in: ['active', 'completed'] } 
-    })
-      .sort({ displayOrder: 1, updatedAt: -1 })
-      .limit(limit)
-      .lean();
-
-    return projects.map(doc => this.documentToProject(doc));
+  // Get featured projects (all statuses, but sorted by status groups)
+  async findFeatured(limit: number = 6): Promise<ProjectType[]> {
+    const projects = await this.findAllByStatusGroups();
+    return projects.slice(0, limit);
   }
 
   // Generate a unique slug from title

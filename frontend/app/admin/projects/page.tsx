@@ -1,20 +1,16 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, X, Check } from 'lucide-react';
+import { Plus, Eye, Search, Filter, Trash2, Edit, ExternalLink, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from "@/hooks/use-toast";
+import { Project } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,34 +20,32 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
-import type { Project } from '@/lib/types';
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { SortableList } from '@/components/ui/sortable-list';
 
 interface ProjectsTableProps {
   projects: Project[];
   onProjectsChange: () => void;
 }
 
-function ProjectStatusBadge({ status }: { status: Project['status'] }) {
+function ProjectStatusBadge({ status }: { status: string }) {
   const variants = {
-    planned: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    active: 'bg-green-100 text-green-800 border-green-200',
-    completed: 'bg-blue-100 text-blue-800 border-blue-200',
-  };
-
-  const labels = {
-    planned: 'Planned',
-    active: 'Active',
-    completed: 'Completed',
+    'planned': 'bg-orange-100 text-orange-800',
+    'active': 'bg-green-100 text-green-800', 
+    'completed': 'bg-blue-100 text-blue-800'
   };
 
   return (
-    <Badge 
-      variant="outline" 
-      className={variants[status]}
-    >
-      {labels[status]}
+    <Badge className={variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
+      {status}
     </Badge>
   );
 }
@@ -59,10 +53,9 @@ function ProjectStatusBadge({ status }: { status: Project['status'] }) {
 function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
   const { toast } = useToast();
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleSelectProject = (projectId: string, checked: boolean) => {
     const newSelected = new Set(selectedProjects);
@@ -82,17 +75,52 @@ function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
     }
   };
 
-  const handleDeleteProject = async (project: Project) => {
-    setProjectToDelete(project);
-    setDeleteDialogOpen(true);
+  const handleReorder = async (reorderedProjects: Project[]) => {
+    try {
+      // Create updates array with new display orders
+      const updates = reorderedProjects.map((project, index) => ({
+        id: project.id,
+        displayOrder: index + 1
+      }));
+
+      const response = await fetch('/api/admin/projects/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateDisplayOrder',
+          projectIds: updates.map(u => u.id),
+          data: { updates }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update project order');
+      }
+
+      toast({
+        title: "Success",
+        description: "Project order updated successfully.",
+      });
+
+      // Only refresh data from server after successful save
+      onProjectsChange();
+    } catch (error) {
+      console.error('Error updating project order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update project order. Please try again.",
+        variant: "destructive",
+      });
+      throw error; // Re-throw to let SortableList handle the revert
+    }
   };
 
-  const confirmDeleteProject = async () => {
-    if (!projectToDelete) return;
-
-    setIsDeleting(true);
+  const handleDeleteProject = async (projectId: string) => {
     try {
-      const response = await fetch(`/api/admin/projects/${projectToDelete.id}`, {
+      setIsDeleting(true);
+      const response = await fetch(`/api/admin/projects/${projectId}`, {
         method: 'DELETE',
       });
 
@@ -101,12 +129,13 @@ function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
       }
 
       toast({
-        title: "Project deleted",
-        description: `${projectToDelete.title} has been deleted successfully.`,
+        title: "Success",
+        description: "Project deleted successfully.",
       });
 
       onProjectsChange();
     } catch (error) {
+      console.error('Error deleting project:', error);
       toast({
         title: "Error",
         description: "Failed to delete project. Please try again.",
@@ -114,31 +143,58 @@ function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
       });
     } finally {
       setIsDeleting(false);
-      setDeleteDialogOpen(false);
       setProjectToDelete(null);
     }
   };
 
-  const handleBulkDelete = () => {
-    if (selectedProjects.size === 0) return;
-    setBulkDeleteDialogOpen(true);
-  };
+  const handleBulkDelete = async () => {
+    try {
+      setIsBulkDeleting(true);
+      const response = await fetch('/api/admin/projects/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          projectIds: Array.from(selectedProjects),
+        }),
+      });
 
-  const handleBulkAction = (action: string) => {
-    if (selectedProjects.size === 0) return;
-    
-    if (action === 'delete') {
-      handleBulkDelete();
-    } else if (action.startsWith('status-')) {
-      const status = action.replace('status-', '');
-      handleBulkStatusUpdate(status);
+      if (!response.ok) {
+        throw new Error('Failed to delete projects');
+      }
+
+      const result = await response.json();
+
+      if (result.errors && result.errors.length > 0) {
+        toast({
+          title: "Partial Success",
+          description: `${result.success.length} projects deleted, but ${result.errors.length} failed.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `${selectedProjects.size} projects deleted successfully.`,
+        });
+      }
+
+      setSelectedProjects(new Set());
+      onProjectsChange();
+    } catch (error) {
+      console.error('Error deleting projects:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete projects. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
-  const handleBulkStatusUpdate = async (status: string) => {
-    setIsDeleting(true);
-    const errors: string[] = [];
-
+  const handleBulkStatusUpdate = async (newStatus: string) => {
     try {
       const response = await fetch('/api/admin/projects/bulk', {
         method: 'POST',
@@ -148,281 +204,247 @@ function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
         body: JSON.stringify({
           action: 'updateStatus',
           projectIds: Array.from(selectedProjects),
-          data: { status },
+          data: { status: newStatus }
         }),
-      });
+          });
 
-      if (!response.ok) {
+          if (!response.ok) {
         throw new Error('Failed to update project status');
-      }
+          }
 
       const result = await response.json();
-
-      if (result.errorCount > 0) {
+      
+      if (result.errors && result.errors.length > 0) {
         toast({
-          title: "Partial success",
-          description: `${result.successCount} projects updated, ${result.errorCount} failed.`,
+          title: "Partial Success",
+          description: `${result.success.length} projects updated, but ${result.errors.length} failed.`,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Status updated",
-          description: `${result.successCount} project(s) status updated to ${status}.`,
+          title: "Success",
+          description: `${selectedProjects.size} projects updated to ${newStatus}.`,
         });
       }
 
       setSelectedProjects(new Set());
       onProjectsChange();
     } catch (error) {
+      console.error('Error updating project status:', error);
       toast({
         title: "Error",
         description: "Failed to update project status. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsDeleting(false);
     }
   };
-
-  const confirmBulkDelete = async () => {
-    setIsDeleting(true);
-    const errors: string[] = [];
-
-    try {
-      // Delete projects one by one
-      for (const projectId of Array.from(selectedProjects)) {
-        try {
-          const response = await fetch(`/api/admin/projects/${projectId}`, {
-            method: 'DELETE',
-          });
-
-          if (!response.ok) {
-            const project = projects.find(p => p.id === projectId);
-            errors.push(project?.title || 'Unknown project');
-          }
-        } catch (error) {
-          const project = projects.find(p => p.id === projectId);
-          errors.push(project?.title || 'Unknown project');
-        }
-      }
-
-      if (errors.length === 0) {
-        toast({
-          title: "Projects deleted",
-          description: `${selectedProjects.size} project(s) deleted successfully.`,
-        });
-      } else {
-        toast({
-          title: "Partial success",
-          description: `Some projects could not be deleted: ${errors.join(', ')}`,
-          variant: "destructive",
-        });
-      }
-
-      setSelectedProjects(new Set());
-      onProjectsChange();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete projects. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-      setBulkDeleteDialogOpen(false);
-    }
-  };
-
-  if (projects.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground mb-4">No projects found</p>
-          <Button asChild>
-            <Link href="/admin/projects/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Project
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const allSelected = projects.length > 0 && selectedProjects.size === projects.length;
-  const someSelected = selectedProjects.size > 0 && selectedProjects.size < projects.length;
 
   return (
     <>
       <Card>
-        <CardContent className="p-0">
-          {/* Bulk Actions Bar */}
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Projects</CardTitle>
+              <CardDescription>
+                Manage your projects. Drag and drop to reorder.
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
           {selectedProjects.size > 0 && (
-            <div className="flex items-center justify-between p-4 bg-muted/50 border-b">
-              <div className="flex items-center gap-2">
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        Update Status ({selectedProjects.size})
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleBulkStatusUpdate('planned')}>
+                        Set to Planned
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkStatusUpdate('active')}>
+                        Set to Active
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkStatusUpdate('completed')}>
+                        Set to Completed
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={isBulkDeleting}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete ({selectedProjects.size})
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Projects</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {selectedProjects.size} selected projects? 
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleBulkDelete}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete Projects
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+              
+              <Button asChild>
+                <Link href="/admin/projects/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Project
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {projects.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No projects found.</p>
+              <Button asChild>
+                <Link href="/admin/projects/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create your first project
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Select All */}
+              <div className="flex items-center space-x-2 pb-2 border-b">
+                <Checkbox
+                  checked={selectedProjects.size === projects.length && projects.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
                 <span className="text-sm font-medium">
-                  {selectedProjects.size} project(s) selected
+                  Select All ({projects.length} projects)
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedProjects(new Set())}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Clear Selection
-                </Button>
-                                 <Select
-                   value=""
-                   onValueChange={(action) => handleBulkAction(action)}
-                 >
-                   <SelectTrigger className="w-[160px]">
-                     <SelectValue placeholder="Bulk Actions" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="status-planned">Set to Planned</SelectItem>
-                     <SelectItem value="status-active">Set to Active</SelectItem>
-                     <SelectItem value="status-completed">Set to Completed</SelectItem>
-                     <SelectItem value="delete">Delete Selected</SelectItem>
-                   </SelectContent>
-                 </Select>
-              </div>
-            </div>
-          )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b bg-muted/50">
-                <tr>
-                  <th className="text-left p-4 font-medium w-12">
+              {/* Sortable Projects List */}
+              <SortableList
+                items={projects}
+                onReorder={handleReorder}
+                getItemId={(project) => project.id}
+                className="space-y-2"
+              >
+                {(project) => (
+                  <div className="flex items-center space-x-4 p-4 border rounded-lg bg-white hover:bg-gray-50">
                     <Checkbox
-                      checked={allSelected}
-                      ref={(el) => {
-                        if (el) {
-                          const checkbox = el as any;
-                          checkbox.indeterminate = someSelected;
-                        }
-                      }}
-                      onCheckedChange={handleSelectAll}
+                      checked={selectedProjects.has(project.id)}
+                      onCheckedChange={(checked) => 
+                        handleSelectProject(project.id, checked as boolean)
+                      }
                     />
-                  </th>
-                  <th className="text-left p-4 font-medium">Project</th>
-                  <th className="text-left p-4 font-medium">Status</th>
-                  <th className="text-left p-4 font-medium">Tags</th>
-                  <th className="text-left p-4 font-medium">Updated</th>
-                  <th className="text-right p-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.map((project) => (
-                  <tr key={project.id} className="border-b hover:bg-muted/50">
-                    <td className="p-4">
-                      <Checkbox
-                        checked={selectedProjects.has(project.id)}
-                        onCheckedChange={(checked) => 
-                          handleSelectProject(project.id, checked as boolean)
-                        }
-                      />
-                    </td>
-                    <td className="p-4">
-                      <div>
-                        <div className="font-medium">{project.title}</div>
-                        <div className="text-sm text-muted-foreground line-clamp-2">
-                          {project.description || 'No description'}
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-1">
+                          <h3 className="font-medium truncate">{project.title}</h3>
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {project.description || 'No description'}
+                          </p>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <ProjectStatusBadge status={project.status} />
+                            {project.tags && (
+                              <span className="text-xs text-muted-foreground">
+                                {project.tags}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(project.updatedAt).toLocaleDateString()}
                         </div>
                       </div>
-                    </td>
-                    <td className="p-4">
-                      <ProjectStatusBadge status={project.status} />
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-muted-foreground">
-                        {project.tags || 'No tags'}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(project.updatedAt).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="p-4 text-right">
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/projects/${project.slug}`} target="_blank">
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/projects/${project.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/projects/${project.slug}`} target="_blank">
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </Link>
-                          </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link href={`/admin/projects/${project.id}/edit`}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </Link>
                           </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/projects/${project.slug}`} target="_blank">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              View
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem 
+                            onClick={() => setProjectToDelete(project.id)}
                             className="text-red-600"
-                            onClick={() => handleDeleteProject(project)}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                )}
+              </SortableList>
           </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Project</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{projectToDelete?.title}"? This action cannot be undone.
+              Are you sure you want to delete this project? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmDeleteProject}
-              className="bg-red-600 hover:bg-red-700"
+              onClick={() => projectToDelete && handleDeleteProject(projectToDelete)}
               disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Bulk Delete Confirmation Dialog */}
-      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Multiple Projects</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedProjects.size} project(s)? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmBulkDelete}
               className="bg-red-600 hover:bg-red-700"
-              disabled={isDeleting}
             >
-              {isDeleting ? "Deleting..." : "Delete All"}
+              {isDeleting ? 'Deleting...' : 'Delete Project'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -506,23 +528,31 @@ function ProjectsManager() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
           <p className="text-muted-foreground">
-            Manage your club's projects and initiatives
+            Manage your club's projects and initiatives.
           </p>
         </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/projects" target="_blank">
+              <Eye className="h-4 w-4 mr-2" />
+              View Projects Page
+            </Link>
+          </Button>
         <Button asChild>
           <Link href="/admin/projects/new">
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Link>
         </Button>
+        </div>
       </div>
 
-      {/* Filters and Search */}
+      {/* Search and Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Filter Projects</CardTitle>
+          <CardTitle>Search & Filter</CardTitle>
           <CardDescription>
-            Search and filter your projects
+            Find specific projects or filter by status.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -574,21 +604,40 @@ function ProjectsManager() {
 
 function ProjectsLoadingSkeleton() {
   return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="h-8 w-32 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-4 w-48 bg-gray-200 rounded animate-pulse mt-2"></div>
+        </div>
+        <div className="flex space-x-2">
+          <div className="h-9 w-24 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-9 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+      
     <Card>
       <CardContent className="p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg mb-2">
+              <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+              <div className="flex-1">
+                <div className="h-4 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-3 w-full bg-gray-200 rounded animate-pulse"></div>
           </div>
+              <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
         </div>
+          ))}
       </CardContent>
     </Card>
+    </div>
   );
 }
 
-export default function AdminProjectsPage() {
-  return <ProjectsManager />;
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={<ProjectsLoadingSkeleton />}>
+      <ProjectsManager />
+    </Suspense>
+  );
 } 

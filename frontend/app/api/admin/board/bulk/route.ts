@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { boardMembersRepo } from '@/lib/repositories/boardMembers';
 import { requireAdminAuth } from '@/lib/auth';
-import { boardMembersRepo } from '@/lib/repositories';
 import { revalidatePath } from 'next/cache';
 
-// POST /api/admin/board/bulk - Bulk operations on board members
 export async function POST(request: NextRequest) {
   // Validate authentication
   const auth = await requireAdminAuth(request);
@@ -12,57 +11,74 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { action, memberIds } = await request.json();
+    const body = await request.json();
+    const { action, memberIds, data } = body;
 
-    if (!action || !memberIds || !Array.isArray(memberIds)) {
+    if (!action || !Array.isArray(memberIds) || memberIds.length === 0) {
       return NextResponse.json(
         { error: 'Action and memberIds array are required' },
         { status: 400 }
       );
     }
 
-    if (memberIds.length === 0) {
-      return NextResponse.json(
-        { error: 'No board members selected' },
-        { status: 400 }
-      );
-    }
-
-    let results = [];
+    const results = {
+      success: [] as string[],
+      errors: [] as { id: string; error: string }[],
+    };
 
     switch (action) {
       case 'delete':
-        for (const id of memberIds) {
+        for (const memberId of memberIds) {
           try {
-            await boardMembersRepo.delete(id);
-            results.push({ id, success: true });
+            await boardMembersRepo.delete(memberId);
+            results.success.push(memberId);
           } catch (error) {
-            console.error(`Error deleting board member ${id}:`, error);
-            results.push({ id, success: false, error: 'Failed to delete' });
+            results.errors.push({
+              id: memberId,
+              error: error instanceof Error ? error.message : 'Failed to delete',
+            });
           }
         }
         break;
 
-      case 'activate':
-        for (const id of memberIds) {
+      case 'updateStatus':
+        if (typeof data?.active !== 'boolean') {
+          return NextResponse.json(
+            { error: 'Active status (boolean) is required for updateStatus action' },
+            { status: 400 }
+          );
+        }
+
+        for (const memberId of memberIds) {
           try {
-            await boardMembersRepo.activate(id);
-            results.push({ id, success: true });
+            await boardMembersRepo.update(memberId, { active: data.active });
+            results.success.push(memberId);
           } catch (error) {
-            console.error(`Error activating board member ${id}:`, error);
-            results.push({ id, success: false, error: 'Failed to activate' });
+            results.errors.push({
+              id: memberId,
+              error: error instanceof Error ? error.message : 'Failed to update status',
+            });
           }
         }
         break;
 
-      case 'deactivate':
-        for (const id of memberIds) {
+      case 'updateDisplayOrder':
+        if (!data?.updates || !Array.isArray(data.updates)) {
+          return NextResponse.json(
+            { error: 'Updates array is required for updateDisplayOrder action' },
+            { status: 400 }
+          );
+        }
+
+        for (const update of data.updates) {
           try {
-            await boardMembersRepo.deactivate(id);
-            results.push({ id, success: true });
+            await boardMembersRepo.update(update.id, { displayOrder: update.displayOrder });
+            results.success.push(update.id);
           } catch (error) {
-            console.error(`Error deactivating board member ${id}:`, error);
-            results.push({ id, success: false, error: 'Failed to deactivate' });
+            results.errors.push({
+              id: update.id,
+              error: error instanceof Error ? error.message : 'Failed to update display order',
+            });
           }
         }
         break;
@@ -74,28 +90,23 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
-
     // Revalidate pages that display board members if any operations succeeded
-    if (successCount > 0) {
+    if (results.success.length > 0) {
+      try {
       revalidatePath('/board');
+        revalidatePath('/admin/board');
       revalidatePath('/');
-      revalidatePath('/api/board');
+      } catch (revalidateError) {
+        console.warn('Failed to revalidate paths:', revalidateError);
+      }
     }
 
-    return NextResponse.json({
-      message: `Bulk ${action} completed`,
-      results,
-      summary: {
-        total: memberIds.length,
-        successful: successCount,
-        failed: failureCount
-      }
-    });
-
+    return NextResponse.json(results);
   } catch (error) {
-    console.error('Error processing bulk operation:', error);
-    return NextResponse.json({ error: 'Failed to process bulk operation' }, { status: 500 });
+    console.error('Bulk board member operation error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 } 

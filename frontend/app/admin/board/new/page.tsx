@@ -27,7 +27,6 @@ interface FormData {
   photoBase64: string;
   bio: string;
   socials: string;
-  displayOrder: number;
   active: boolean;
 }
 
@@ -37,7 +36,6 @@ interface FormErrors {
   photoUrl?: string;
   bio?: string;
   socials?: string;
-  displayOrder?: string;
 }
 
 export default function NewBoardMemberPage() {
@@ -55,7 +53,6 @@ export default function NewBoardMemberPage() {
     photoBase64: '',
     bio: '',
     socials: '',
-    displayOrder: 0,
     active: true,
   });
 
@@ -164,7 +161,7 @@ export default function NewBoardMemberPage() {
         ...formData,
         socials: formData.socials ? formData.socials : '', // Send as string
         photoBase64: formData.photoBase64 || '', // Send base64 image
-        displayOrder: Number(formData.displayOrder),
+        displayOrder: 0, // Default display order, will be managed by drag-and-drop
       }),
       });
 
@@ -390,44 +387,23 @@ export default function NewBoardMemberPage() {
                   </p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="displayOrder">Display Order</Label>
-                    <Input
-                      id="displayOrder"
-                      type="number"
-                      min="0"
-                      value={formData.displayOrder}
-                      onChange={(e) => setFormData(prev => ({ ...prev, displayOrder: parseInt(e.target.value) || 0 }))}
-                      placeholder="0"
-                      className={errors.displayOrder ? "border-red-500" : ""}
+                <div className="space-y-2">
+                  <Label htmlFor="active">Status</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="active"
+                      checked={formData.active}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({ ...prev, active: checked as boolean }))
+                      }
                     />
-                    {errors.displayOrder && (
-                      <p className="text-sm text-red-600">{errors.displayOrder}</p>
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                      Lower numbers appear first
-                    </p>
+                    <Label htmlFor="active" className="text-sm font-normal">
+                      Active member
+                    </Label>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="active">Status</Label>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="active"
-                        checked={formData.active}
-                        onCheckedChange={(checked) => 
-                          setFormData(prev => ({ ...prev, active: checked as boolean }))
-                        }
-                      />
-                      <Label htmlFor="active" className="text-sm font-normal">
-                        Active member
-                      </Label>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Only active members appear on the public board page
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Only active members appear on the public board page
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -521,9 +497,6 @@ export default function NewBoardMemberPage() {
                 )}
 
                 <div className="pt-2 border-t space-y-1">
-                  <div className="text-xs text-muted-foreground">
-                    Display Order: {formData.displayOrder}
-                  </div>
                   <div className="text-xs text-muted-foreground">
                     Status: {formData.active ? 'Active' : 'Inactive'}
                   </div>
