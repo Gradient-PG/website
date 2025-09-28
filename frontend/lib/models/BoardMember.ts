@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IBoardMember extends Document {
   name: string;
   role: string;
-  roleType: 'board_member' | 'coordinator'; // Flag to distinguish between board members and coordinators
+  roleType: 'board_member' | 'coordinator' | 'member'; // Flag to distinguish between board members, coordinators, and regular members
   photoUrl?: string;
   photoBase64?: string; // Base64 encoded image (takes priority over photoUrl)
   bio?: string;
@@ -27,9 +27,9 @@ const BoardMemberSchema = new Schema<IBoardMember>({
   },
   roleType: {
     type: String,
-    enum: ['board_member', 'coordinator'],
+    enum: ['board_member', 'coordinator', 'member'],
     required: true,
-    default: 'board_member',
+    default: 'member',
   },
   photoUrl: {
     type: String,
@@ -62,9 +62,11 @@ const BoardMemberSchema = new Schema<IBoardMember>({
 // Create indexes
 BoardMemberSchema.index({ active: 1 });
 BoardMemberSchema.index({ displayOrder: 1 });
-BoardMemberSchema.index({ role: 1 });
 BoardMemberSchema.index({ roleType: 1 });
-BoardMemberSchema.index({ roleType: 1, active: 1 });
 
-// Prevent re-compilation during development
-export default mongoose.models.BoardMember || mongoose.model<IBoardMember>('BoardMember', BoardMemberSchema); 
+// Clear any existing cached model to ensure schema updates are applied
+if (mongoose.models.BoardMember) {
+  delete mongoose.models.BoardMember;
+}
+
+export default mongoose.model<IBoardMember>('BoardMember', BoardMemberSchema); 

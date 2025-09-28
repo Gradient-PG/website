@@ -22,7 +22,7 @@ import { FormField } from '@/components/ui/form-field';
 interface FormData {
   name: string;
   role: string;
-  roleType: 'board_member' | 'coordinator';
+  roleType: 'board_member' | 'coordinator' | 'member';
   photoUrl: string;
   photoBase64: string;
   bio: string;
@@ -33,6 +33,7 @@ interface FormData {
 interface FormErrors {
   name?: string;
   role?: string;
+  roleType?: string;
   photoUrl?: string;
   bio?: string;
   socials?: string;
@@ -48,7 +49,7 @@ export default function NewBoardMemberPage() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     role: '',
-    roleType: 'board_member',
+    roleType: 'member',
     photoUrl: '',
     photoBase64: '',
     bio: '',
@@ -291,18 +292,27 @@ export default function NewBoardMemberPage() {
 
                 {/* Role Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="roleType">Member Type *</Label>
-                  <Select value={formData.roleType} onValueChange={(value: 'board_member' | 'coordinator') => setFormData(prev => ({ ...prev, roleType: value }))}>
-                    <SelectTrigger>
+                  <Label htmlFor="roleType">Member Type</Label>
+                  <Select
+                    value={formData.roleType}
+                    onValueChange={(value: 'board_member' | 'coordinator' | 'member') => 
+                      setFormData(prev => ({ ...prev, roleType: value }))
+                    }
+                  >
+                    <SelectTrigger className={errors.roleType ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select member type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="board_member">Board Member</SelectItem>
                       <SelectItem value="coordinator">Coordinator</SelectItem>
+                      <SelectItem value="member">Member</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.roleType && (
+                    <p className="text-sm text-red-600">{errors.roleType}</p>
+                  )}
                   <p className="text-sm text-muted-foreground">
-                    Board Members have formal positions, Coordinators manage specific areas
+                    Choose the type of membership for this person
                   </p>
                 </div>
 

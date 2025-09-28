@@ -45,10 +45,36 @@ function MemberStatusBadge({ active }: { active: boolean }) {
   );
 }
 
-function MemberRoleTypeBadge({ roleType }: { roleType: 'board_member' | 'coordinator' }) {
+function MemberRoleTypeBadge({ roleType }: { roleType: 'board_member' | 'coordinator' | 'member' }) {
+  const getBadgeStyle = () => {
+    switch (roleType) {
+      case 'board_member':
+        return 'bg-blue-100 text-blue-800';
+      case 'coordinator':
+        return 'bg-purple-100 text-purple-800';
+      case 'member':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getDisplayName = () => {
+    switch (roleType) {
+      case 'board_member':
+        return 'Board Member';
+      case 'coordinator':
+        return 'Coordinator';
+      case 'member':
+        return 'Member';
+      default:
+        return roleType;
+    }
+  };
+
   return (
-    <Badge className={roleType === 'board_member' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}>
-      {roleType === 'board_member' ? 'Board Member' : 'Coordinator'}
+    <Badge className={getBadgeStyle()}>
+      {getDisplayName()}
     </Badge>
   );
 }
@@ -523,21 +549,20 @@ function BoardMembersManager() {
   // Get unique roles for filter
   const uniqueRoles = Array.from(new Set(members.map(m => m.role))).sort();
 
-  // Calculate stats
+  // Calculate stats by member type
+  const boardMembers = members.filter(m => m.roleType === 'board_member');
+  const coordinators = members.filter(m => m.roleType === 'coordinator');
+  const regularMembers = members.filter(m => m.roleType === 'member');
   const activeMembers = members.filter(m => m.active).length;
-  const leadershipRoles = ['President', 'Vice President', 'Secretary', 'Treasurer'];
-  const leadershipCount = members.filter(m => 
-    leadershipRoles.includes(m.role) && m.active
-  ).length;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Board Members</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Team Members</h1>
           <p className="text-muted-foreground">
-            Manage your club's board members and leadership team
+            Manage your club's board members, coordinators, and team members
           </p>
         </div>
         <Button asChild>
@@ -549,32 +574,41 @@ function BoardMembersManager() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Members</CardTitle>
+            <CardTitle className="text-sm font-medium">Board Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{boardMembers.filter(m => m.active).length}</div>
+            <p className="text-xs text-muted-foreground">{boardMembers.length} total</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Coordinators</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{coordinators.filter(m => m.active).length}</div>
+            <p className="text-xs text-muted-foreground">{coordinators.length} total</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{regularMembers.filter(m => m.active).length}</div>
+            <p className="text-xs text-muted-foreground">{regularMembers.length} total</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Team</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeMembers}</div>
-            <p className="text-xs text-muted-foreground">Currently serving</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Leadership Roles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{leadershipCount}</div>
-            <p className="text-xs text-muted-foreground">Executive positions</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{members.length}</div>
-            <p className="text-xs text-muted-foreground">All time</p>
+            <p className="text-xs text-muted-foreground">{members.length} total</p>
           </CardContent>
         </Card>
       </div>

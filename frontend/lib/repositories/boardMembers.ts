@@ -44,7 +44,7 @@ export class BoardMembersRepository {
   }
 
   // Get board members by role type
-  async findByRoleType(roleType: 'board_member' | 'coordinator', activeOnly: boolean = false): Promise<BoardMemberType[]> {
+  async findByRoleType(roleType: 'board_member' | 'coordinator' | 'member', activeOnly: boolean = false): Promise<BoardMemberType[]> {
     await this.ensureConnection();
     
     const filter: any = { roleType };
@@ -52,24 +52,63 @@ export class BoardMembersRepository {
       filter.active = true;
     }
 
-    const members = await BoardMember.find(filter)
+    const boardMembers = await BoardMember.find(filter)
       .sort({ displayOrder: 1, createdAt: 1 })
       .lean();
-
-    return members.map(member => this.documentToBoardMember(member));
+    
+    return boardMembers.map(doc => this.documentToBoardMember(doc));
   }
 
   // Get board members grouped by role type
   async findGroupedByRoleType(activeOnly: boolean = false): Promise<{
     boardMembers: BoardMemberType[];
     coordinators: BoardMemberType[];
+    members: BoardMemberType[];
   }> {
-    const [boardMembers, coordinators] = await Promise.all([
+    const [boardMembers, coordinators, members] = await Promise.all([
       this.findByRoleType('board_member', activeOnly),
       this.findByRoleType('coordinator', activeOnly),
+      this.findByRoleType('member', activeOnly),
     ]);
 
-    return { boardMembers, coordinators };
+    return { boardMembers, coordinators, members };
+  }
+
+  // Get statistics by role type
+  async getStatsByRoleType(): Promise<{
+    boardMembers: { total: number; active: number };
+    coordinators: { total: number; active: number };
+    members: { total: number; active: number };
+    total: { total: number; active: number };
+  }> {
+    await this.ensureConnection();
+
+    const [
+      totalBoardMembers,
+      activeBoardMembers,
+      totalCoordinators,
+      activeCoordinators,
+      totalMembers,
+      activeMembers,
+      totalAll,
+      activeAll,
+    ] = await Promise.all([
+      BoardMember.countDocuments({ roleType: 'board_member' }),
+      BoardMember.countDocuments({ roleType: 'board_member', active: true }),
+      BoardMember.countDocuments({ roleType: 'coordinator' }),
+      BoardMember.countDocuments({ roleType: 'coordinator', active: true }),
+      BoardMember.countDocuments({ roleType: 'member' }),
+      BoardMember.countDocuments({ roleType: 'member', active: true }),
+      BoardMember.countDocuments({}),
+      BoardMember.countDocuments({ active: true }),
+    ]);
+
+    return {
+      boardMembers: { total: totalBoardMembers, active: activeBoardMembers },
+      coordinators: { total: totalCoordinators, active: activeCoordinators },
+      members: { total: totalMembers, active: activeMembers },
+      total: { total: totalAll, active: activeAll },
+    };
   }
 
   // Get a board member by ID

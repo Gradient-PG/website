@@ -8,7 +8,10 @@ import {
   Plus,
   Eye,
   Edit,
-  Calendar
+  Calendar,
+  UserCheck,
+  User,
+  Users2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,14 +56,12 @@ async function DashboardStats() {
       allProjects,
       activeProjects,
       completedProjects,
-      allBoardMembers,
-      activeBoardMembers
+      memberStats
     ] = await Promise.all([
       projectsRepo.findAll(),
       projectsRepo.findAll('active'),
       projectsRepo.findAll('completed'),
-      boardMembersRepo.findAll(),
-      boardMembersRepo.findActive()
+      boardMembersRepo.getStatsByRoleType()
     ]);
 
     const stats = [
@@ -72,9 +73,27 @@ async function DashboardStats() {
       },
       {
         title: 'Board Members',
-        value: activeBoardMembers.length,
-        description: `${allBoardMembers.length - activeBoardMembers.length} inactive`,
+        value: memberStats.boardMembers.active,
+        description: `${memberStats.boardMembers.total} total`,
         icon: Users,
+      },
+      {
+        title: 'Coordinators',
+        value: memberStats.coordinators.active,
+        description: `${memberStats.coordinators.total} total`,
+        icon: UserCheck,
+      },
+      {
+        title: 'Members',
+        value: memberStats.members.active,
+        description: `${memberStats.members.total} total`,
+        icon: User,
+      },
+      {
+        title: 'Total Team',
+        value: memberStats.total.active,
+        description: `${memberStats.total.total} total members`,
+        icon: Users2,
       },
       {
         title: 'Active Projects',
@@ -82,16 +101,10 @@ async function DashboardStats() {
         description: 'Currently in progress',
         icon: Activity,
       },
-      {
-        title: 'Website Views',
-        value: '---',
-        description: 'Analytics coming soon',
-        icon: Eye,
-      },
     ];
 
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {stats.map((stat, index) => (
           <StatsCard key={index} {...stat} />
         ))}

@@ -31,7 +31,7 @@ export interface BoardMember {
   id: string; // MongoDB ObjectId as string
   name: string;
   role: string;
-  roleType: 'board_member' | 'coordinator'; // Flag to distinguish between board members and coordinators
+  roleType: 'board_member' | 'coordinator' | 'member'; // Flag to distinguish between board members, coordinators, and regular members
   photoUrl?: string;
   photoBase64?: string; // Base64 encoded image (takes priority over photoUrl)
   bio?: string;
@@ -45,7 +45,7 @@ export interface BoardMember {
 export interface BoardMemberInput {
   name: string;
   role: string;
-  roleType: 'board_member' | 'coordinator';
+  roleType: 'board_member' | 'coordinator' | 'member';
   photoUrl?: string;
   photoBase64?: string;
   bio?: string;

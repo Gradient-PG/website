@@ -21,12 +21,13 @@ export const metadata: Metadata = {
 async function getActiveBoardMembersGrouped(): Promise<{
   boardMembers: BoardMember[];
   coordinators: BoardMember[];
+  members: BoardMember[];
 }> {
   try {
     return await boardMembersRepo.findGroupedByRoleType(true);
   } catch (error) {
     console.error('Failed to fetch board members:', error);
-    return { boardMembers: [], coordinators: [] };
+    return { boardMembers: [], coordinators: [], members: [] };
   }
 }
 
@@ -67,8 +68,8 @@ function formatSocialUrl(platform: string, value: string): string {
 }
 
 export default async function BoardPage() {
-  const { boardMembers, coordinators } = await getActiveBoardMembersGrouped();
-  const totalMembers = boardMembers.length + coordinators.length;
+  const { boardMembers, coordinators, members } = await getActiveBoardMembersGrouped();
+  const totalMembers = boardMembers.length + coordinators.length + members.length;
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -84,7 +85,7 @@ export default async function BoardPage() {
 
       {/* Header */}
       <div className="text-center mb-8 md:mb-12">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4">Our Board</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">Our Team</h1>
         <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
           Meet the passionate students leading our science club and driving 
           innovation in research, education, and collaboration.
@@ -125,11 +126,28 @@ export default async function BoardPage() {
         </section>
       )}
 
+      {/* Members */}
+      {members.length > 0 && (
+        <section className="mb-8 md:mb-12">
+          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-primary">Members</h2>
+          <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
+            Our active members who participate in club activities and contribute to our mission.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {members
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((member) => (
+                <BoardMemberCard key={member.id} member={member} />
+              ))}
+          </div>
+        </section>
+      )}
+
       {/* No members message */}
       {totalMembers === 0 && (
         <div className="text-center py-8 md:py-12">
           <p className="text-base md:text-lg text-muted-foreground">
-            Board member information will be available soon.
+            Team member information will be available soon.
           </p>
         </div>
       )}
@@ -138,12 +156,12 @@ export default async function BoardPage() {
       <div className="text-center mt-12 md:mt-16 p-6 md:p-8 bg-gray-50 rounded-lg">
         <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Interested in Joining Our Team?</h3>
         <p className="text-base md:text-lg text-muted-foreground mb-4 md:mb-6 max-w-2xl mx-auto">
-          We're always looking for passionate students to join our board and help 
-          lead exciting scientific initiatives. Text us to learn about opportunities!
+          We're always looking for passionate students to join our team and help 
+          lead exciting scientific initiatives. Contact us to learn about opportunities!
         </p>
         <Button size="lg" asChild>
           <a href={urls.FB_URL} target="_blank" rel="noopener noreferrer">
-            Text Us On Facebook
+            Contact Us on Facebook
           </a>
         </Button>
       </div>

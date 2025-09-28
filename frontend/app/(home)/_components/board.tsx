@@ -22,12 +22,13 @@ export const revalidate = 60;
 async function getActiveBoardMembersGrouped(): Promise<{
   boardMembers: BoardMember[];
   coordinators: BoardMember[];
+  members: BoardMember[];
 }> {
   try {
     return await boardMembersRepo.findGroupedByRoleType(true);
   } catch (error) {
     console.error('Failed to fetch board members:', error);
-    return { boardMembers: [], coordinators: [] };
+    return { boardMembers: [], coordinators: [], members: [] };
   }
 }
 
@@ -42,8 +43,8 @@ function parseSocials(socials?: string): MemberSocials {
 }
 
 const Board: React.FC<BoardProps> = async ({ ...props }) => {
-  const { boardMembers, coordinators } = await getActiveBoardMembersGrouped();
-  const totalMembers = boardMembers.length + coordinators.length;
+  const { boardMembers, coordinators, members } = await getActiveBoardMembersGrouped();
+  const totalMembers = boardMembers.length + coordinators.length + members.length;
 
   return (
     <div
@@ -132,6 +133,47 @@ const Board: React.FC<BoardProps> = async ({ ...props }) => {
           );
         })}
       </div>
+        </div>
+      )}
+
+      {/* Members Section */}
+      {members.length > 0 && (
+        <div className="mt-8 md:mt-12">
+          <h2 className="text-xl md:text-2xl font-semibold text-primary mb-4 md:mb-6 text-center">Members</h2>
+          <div className="grid grid-cols-1 gap-3 md:gap-4 px-2 md:px-4 md:grid-cols-3">
+            {members
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((member) => {
+                const socials = parseSocials(member.socials);
+                return (
+                  <div
+                    className="flex flex-row items-center gap-3 md:gap-5 rounded-md bg-neutral-100 p-3 md:p-4 py-4 md:py-5"
+                    key={member.id}
+                  >
+                    <Avatar
+                      src={member.photoUrl}
+                      base64={member.photoBase64}
+                      name={member.name}
+                      size="lg"
+                      alt={`${member.name} photo`}
+                    />
+                    <div className="flex flex-col rounded-md flex-1">
+                      <h1 className="text-lg md:text-xl font-bold text-neutral-900">
+                        {member.name}
+                      </h1>
+                      <h2 className="text-sm md:text-base font-semibold text-primary">
+                        {member.role}
+                      </h2>
+                      {member.bio && (
+                        <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {member.bio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         </div>
       )}
 
