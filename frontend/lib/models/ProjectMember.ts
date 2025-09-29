@@ -9,7 +9,7 @@ export interface IProjectMember extends Document {
   updatedAt: Date;
 }
 
-const ProjectMemberSchema = new Schema<IProjectMember>({
+const ProjectMemberSchema = new Schema({
   projectId: {
     type: Schema.Types.ObjectId,
     ref: 'Project',

@@ -53,6 +53,7 @@ export interface BoardMemberInput {
   bio?: string;
   socials?: string;
   displayOrder?: number;
+  active?: boolean;
 }
 
 // Project role enum for members working on projects

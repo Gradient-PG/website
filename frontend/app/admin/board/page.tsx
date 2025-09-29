@@ -598,7 +598,7 @@ function BoardMembersManager() {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(member =>
         member.name.toLowerCase().includes(search) ||
-        member.role.toLowerCase().includes(search) ||
+        (member.role && member.role.toLowerCase().includes(search)) ||
         (member.bio && member.bio.toLowerCase().includes(search))
       );
     }

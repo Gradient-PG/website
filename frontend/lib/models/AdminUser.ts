@@ -12,7 +12,7 @@ export interface IAdminUser extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const AdminUserSchema = new Schema<IAdminUser>({
+const AdminUserSchema = new Schema({
   username: {
     type: String,
     required: true,

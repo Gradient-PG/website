@@ -14,7 +14,7 @@ export interface IBoardMember extends Document {
   updatedAt: Date;
 }
 
-const BoardMemberSchema = new Schema<IBoardMember>({
+const BoardMemberSchema = new Schema({
   name: {
     type: String,
     required: true,
