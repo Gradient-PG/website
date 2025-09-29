@@ -13,7 +13,7 @@ export class BoardMembersRepository {
     return {
       id: doc._id?.toString() || doc.id,
       name: doc.name,
-      role: doc.role,
+      role: doc.role || undefined, // Explicitly handle missing role field
       roleType: doc.roleType || 'board_member', // Default to board_member for existing records
       photoUrl: doc.photoUrl || '',
       photoBase64: doc.photoBase64 || '',
@@ -125,18 +125,24 @@ export class BoardMembersRepository {
   async create(memberData: BoardMemberInput): Promise<BoardMemberType> {
     await this.ensureConnection();
 
-    const member = new BoardMember({
+    // Prepare member data, excluding empty role field
+    const memberDoc: any = {
       name: memberData.name,
-      role: memberData.role,
       roleType: memberData.roleType || 'board_member',
       photoUrl: memberData.photoUrl || '',
       photoBase64: memberData.photoBase64 || '',
       bio: memberData.bio || '',
       socials: memberData.socials || '',
       displayOrder: memberData.displayOrder || 0,
-      active: memberData.active !== undefined ? memberData.active : true,
-    });
+      active: true, // Default to active for new members
+    };
 
+    // Only include role if it's not empty
+    if (memberData.role && memberData.role.trim() !== '') {
+      memberDoc.role = memberData.role;
+    }
+
+    const member = new BoardMember(memberDoc);
     const savedMember = await member.save();
     return this.documentToBoardMember(savedMember.toObject());
   }
@@ -145,9 +151,28 @@ export class BoardMembersRepository {
   async update(id: string, memberData: Partial<BoardMemberInput>): Promise<BoardMemberType> {
     await this.ensureConnection();
 
+    // Prepare update operations
+    const updateData: any = { ...memberData, updatedAt: new Date() };
+    const unsetData: any = {};
+    
+    // Handle role field - if empty, unset it completely
+    if (memberData.role === '' || memberData.role === null || memberData.role === undefined) {
+      delete updateData.role; // Remove from update data
+      unsetData.role = ""; // Add to unset operation
+    }
+
+    // Build the update query
+    const updateQuery: any = {};
+    if (Object.keys(updateData).length > 0) {
+      updateQuery.$set = updateData;
+    }
+    if (Object.keys(unsetData).length > 0) {
+      updateQuery.$unset = unsetData;
+    }
+
     const updatedMember = await BoardMember.findByIdAndUpdate(
       id,
-      { ...memberData, updatedAt: new Date() },
+      updateQuery,
       { new: true, runValidators: true }
     );
 
@@ -170,12 +195,36 @@ export class BoardMembersRepository {
 
   // Soft delete (set active to false)
   async deactivate(id: string): Promise<BoardMemberType> {
-    return this.update(id, { active: false });
+    await this.ensureConnection();
+
+    const updatedMember = await BoardMember.findByIdAndUpdate(
+      id,
+      { active: false, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedMember) {
+      throw new Error(`Board member with ID ${id} not found`);
+    }
+
+    return this.documentToBoardMember(updatedMember.toObject());
   }
 
   // Reactivate a board member
   async activate(id: string): Promise<BoardMemberType> {
-    return this.update(id, { active: true });
+    await this.ensureConnection();
+
+    const updatedMember = await BoardMember.findByIdAndUpdate(
+      id,
+      { active: true, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedMember) {
+      throw new Error(`Board member with ID ${id} not found`);
+    }
+
+    return this.documentToBoardMember(updatedMember.toObject());
   }
 
   // Get board members by role

@@ -227,13 +227,23 @@ export const validateBoardMember = (data: BoardMemberInput): FormValidationResul
     fieldErrors.push({ field: 'name', message: nameError });
   }
 
-  // Role validation
-  const roleError = ValidationRules.required(data.role, 'Role') ||
-    ValidationRules.minLength(data.role?.trim() || '', 2, 'Role') ||
-    ValidationRules.maxLength(data.role?.trim() || '', 100, 'Role');
-  if (roleError) {
-    errors.role = roleError;
-    fieldErrors.push({ field: 'role', message: roleError });
+  // Role validation - required for board_member and coordinator, optional for member
+  if (data.roleType !== 'member') {
+    const roleError = ValidationRules.required(data.role, 'Role') ||
+      ValidationRules.minLength(data.role?.trim() || '', 2, 'Role') ||
+      ValidationRules.maxLength(data.role?.trim() || '', 100, 'Role');
+    if (roleError) {
+      errors.role = roleError;
+      fieldErrors.push({ field: 'role', message: roleError });
+    }
+  } else if (data.role) {
+    // If role is provided for member type, validate its length
+    const roleError = ValidationRules.minLength(data.role?.trim() || '', 2, 'Role') ||
+      ValidationRules.maxLength(data.role?.trim() || '', 100, 'Role');
+    if (roleError) {
+      errors.role = roleError;
+      fieldErrors.push({ field: 'role', message: roleError });
+    }
   }
 
   // Photo URL validation

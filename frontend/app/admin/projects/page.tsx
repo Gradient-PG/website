@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Plus, Eye, Search, Filter, Trash2, Edit, ExternalLink, MoreVertical } from 'lucide-react';
+import { Plus, Eye, Search, Filter, Trash2, Edit, ExternalLink, MoreVertical, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -304,13 +304,6 @@ function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
                   </AlertDialog>
                 </>
               )}
-              
-              <Button asChild>
-                <Link href="/admin/projects/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Project
-                </Link>
-              </Button>
             </div>
           </div>
         </CardHeader>
@@ -385,6 +378,12 @@ function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
                       </Button>
                       
                       <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/projects/${project.id}/members`}>
+                          <Users className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      
+                      <Button variant="ghost" size="sm" asChild>
                         <Link href={`/admin/projects/${project.id}/edit`}>
                           <Edit className="h-4 w-4" />
                         </Link>
@@ -401,6 +400,12 @@ function ProjectsTable({ projects, onProjectsChange }: ProjectsTableProps) {
                             <Link href={`/admin/projects/${project.id}/edit`}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/admin/projects/${project.id}/members`}>
+                              <Users className="h-4 w-4 mr-2" />
+                              Manage Team
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>

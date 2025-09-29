@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IBoardMember extends Document {
   name: string;
-  role: string;
+  role?: string; // Optional role
   roleType: 'board_member' | 'coordinator' | 'member'; // Flag to distinguish between board members, coordinators, and regular members
   photoUrl?: string;
   photoBase64?: string; // Base64 encoded image (takes priority over photoUrl)
@@ -22,8 +22,17 @@ const BoardMemberSchema = new Schema<IBoardMember>({
   },
   role: {
     type: String,
-    required: true,
+    required: false, // Made optional
     trim: true,
+    validate: {
+      validator: function(v: string) {
+        // Allow empty strings, null, or undefined for members
+        if (!v || v.trim() === '') return true;
+        // For non-empty strings, must be at least 2 characters
+        return v.trim().length >= 2;
+      },
+      message: 'Role must be at least 2 characters long if provided'
+    }
   },
   roleType: {
     type: String,
@@ -64,9 +73,6 @@ BoardMemberSchema.index({ active: 1 });
 BoardMemberSchema.index({ displayOrder: 1 });
 BoardMemberSchema.index({ roleType: 1 });
 
-// Clear any existing cached model to ensure schema updates are applied
-if (mongoose.models.BoardMember) {
-  delete mongoose.models.BoardMember;
-}
+const BoardMember = mongoose.models.BoardMember || mongoose.model<IBoardMember>('BoardMember', BoardMemberSchema);
 
-export default mongoose.model<IBoardMember>('BoardMember', BoardMemberSchema); 
+export default BoardMember; 

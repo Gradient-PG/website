@@ -32,12 +32,12 @@ async function getActiveBoardMembersGrouped(): Promise<{
 }
 
 // Helper function to parse JSON socials
-function parseSocials(socials?: string): MemberSocials {
+function parseSocials(socials?: string): { [key: string]: string } {
   if (!socials) return {};
   try {
     const parsed = JSON.parse(socials);
     // Filter out empty string values
-    const filtered: MemberSocials = {};
+    const filtered: { [key: string]: string } = {};
     Object.entries(parsed).forEach(([key, value]) => {
       if (value && typeof value === 'string' && value.trim() !== '') {
         filtered[key] = value as string;
@@ -182,52 +182,53 @@ function BoardMemberCard({ member, featured = false }: { member: BoardMember; fe
   const socials = parseSocials(member.socials);
 
   return (
-    <Card className={`h-full flex flex-col ${featured ? 'border-primary shadow-lg' : ''}`}>
-      <CardHeader className="text-center">
-        <div className="relative mx-auto mb-4">
-          <Avatar
-            src={member.photoUrl}
-            base64={member.photoBase64}
-            name={member.name}
-            size={featured ? 'xl' : 'lg'}
-            alt={`${member.name} photo`}
-          />
-        </div>
-        
-        <CardTitle className={featured ? "text-xl" : "text-lg"}>{member.name}</CardTitle>
-        <p className={`font-semibold text-primary ${featured ? 'text-base' : 'text-sm'}`}>
-          {member.role}
-        </p>
-      </CardHeader>
-
-      <CardContent className="flex-1 flex flex-col">
-        {member.bio && (
-          <p className="text-muted-foreground text-sm mb-4 flex-1 text-justify">
-            {member.bio}
-          </p>
-        )}
-
-        {/* Social links */}
-        {Object.keys(socials).length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-center mt-auto">
-                         {Object.entries(socials)
-               .filter(([_, url]) => url) // Filter out empty values
-               .slice(0, 4) // Limit to 4 social links
-               .map(([platform, url]) => (
-                <a
-                  key={platform}
-                  href={formatSocialUrl(platform, url!)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
-                  title={`${member.name} on ${platform}`}
-                >
-                  {getSocialIcon(platform)}
-                </a>
-              ))}
+    <Link href={`/board/${member.id}`} className="block">
+      <Card className={`h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer ${featured ? 'border-primary shadow-lg' : ''}`}>
+        <CardHeader className="text-center">
+          <div className="relative mx-auto mb-4">
+            <Avatar
+              src={member.photoUrl}
+              base64={member.photoBase64}
+              name={member.name}
+              size={featured ? 'xl' : 'lg'}
+              alt={`${member.name} photo`}
+            />
           </div>
-        )}
-      </CardContent>
-    </Card>
+          
+          <CardTitle className={featured ? "text-xl" : "text-lg"}>{member.name}</CardTitle>
+          {member.role && (
+            <p className={`font-semibold text-primary ${featured ? 'text-base' : 'text-sm'}`}>
+              {member.role}
+            </p>
+          )}
+        </CardHeader>
+
+        <CardContent className="flex-1 flex flex-col">
+          {member.bio && (
+            <p className="text-muted-foreground text-sm mb-4 flex-1 text-justify line-clamp-3">
+              {member.bio}
+            </p>
+          )}
+
+          {/* Social links */}
+          {Object.keys(socials).length > 0 && (
+            <div className="flex flex-wrap gap-2 justify-center mt-auto">
+              {Object.entries(socials)
+                .filter(([_, url]) => url) // Filter out empty values
+                .slice(0, 4) // Limit to 4 social links
+                .map(([platform, url]) => (
+                  <div
+                    key={platform}
+                    className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
+                    title={`${member.name} on ${platform}`}
+                  >
+                    {getSocialIcon(platform)}
+                  </div>
+                ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </Link>
   );
 } 

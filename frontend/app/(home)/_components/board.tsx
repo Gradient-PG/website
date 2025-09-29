@@ -169,9 +169,11 @@ const Board: React.FC<BoardProps> = async ({ ...props }) => {
                       <h1 className="text-lg md:text-xl font-bold text-neutral-900">
                         {member.name}
                       </h1>
-                      <h2 className="text-sm md:text-base font-semibold text-primary">
-                        {member.role}
-                      </h2>
+                      {member.role && (
+                        <h2 className="text-sm md:text-base font-semibold text-primary">
+                          {member.role}
+                        </h2>
+                      )}
                       {member.bio && (
                         <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
                           {member.bio}

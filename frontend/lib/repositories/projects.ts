@@ -178,6 +178,121 @@ export class ProjectsRepository {
 
     return slug;
   }
+
+  // Get projects with their assigned members
+  async findAllWithMembers(): Promise<ProjectType[]> {
+    await this.ensureConnection();
+    
+    // Import dynamically to avoid circular dependency
+    const ProjectMember = (await import('../models/ProjectMember')).default;
+    
+    const projects = await Project.find({})
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .lean();
+    
+    const projectsWithMembers = await Promise.all(
+      projects.map(async (project) => {
+        try {
+          const members = await ProjectMember.find({ projectId: (project as any)._id })
+            .populate({
+              path: 'memberId',
+              select: 'name role roleType photoUrl photoBase64 bio socials displayOrder active'
+            })
+            .sort({ joinedAt: 1 })
+            .lean();
+
+          const formattedMembers = members.map((pm: any) => ({
+            id: pm._id.toString(),
+            projectId: pm.projectId.toString(),
+            memberId: pm.memberId._id.toString(),
+            role: pm.role as 'member' | 'coordinator',
+            joinedAt: pm.joinedAt.toISOString(),
+            member: {
+              id: pm.memberId._id.toString(),
+              name: pm.memberId.name,
+              role: pm.memberId.role,
+              roleType: pm.memberId.roleType,
+              photoUrl: pm.memberId.photoUrl || '',
+              photoBase64: pm.memberId.photoBase64 || '',
+              bio: pm.memberId.bio || '',
+              socials: pm.memberId.socials || '',
+              displayOrder: pm.memberId.displayOrder,
+              active: pm.memberId.active,
+              createdAt: pm.memberId.createdAt?.toISOString ? pm.memberId.createdAt.toISOString() : pm.memberId.createdAt,
+              updatedAt: pm.memberId.updatedAt?.toISOString ? pm.memberId.updatedAt.toISOString() : pm.memberId.updatedAt,
+            }
+          }));
+
+          return {
+            ...this.documentToProject(project),
+            members: formattedMembers
+          };
+        } catch (error) {
+          console.error(`Error fetching members for project ${(project as any)._id}:`, error);
+          return {
+            ...this.documentToProject(project),
+            members: []
+          };
+        }
+      })
+    );
+    
+    return projectsWithMembers;
+  }
+
+  // Get a single project with its members
+  async findBySlugWithMembers(slug: string): Promise<ProjectType | null> {
+    await this.ensureConnection();
+    
+    const project = await Project.findOne({ slug }).lean();
+    if (!project) return null;
+    
+    // Import dynamically to avoid circular dependency
+    const ProjectMember = (await import('../models/ProjectMember')).default;
+    
+    try {
+      const members = await ProjectMember.find({ projectId: (project as any)._id })
+        .populate({
+          path: 'memberId',
+          select: 'name role roleType photoUrl photoBase64 bio socials displayOrder active'
+        })
+        .sort({ joinedAt: 1 })
+        .lean();
+
+      const formattedMembers = members.map((pm: any) => ({
+        id: pm._id.toString(),
+        projectId: pm.projectId.toString(),
+        memberId: pm.memberId._id.toString(),
+        role: pm.role as 'member' | 'coordinator',
+        joinedAt: pm.joinedAt.toISOString(),
+        member: {
+          id: pm.memberId._id.toString(),
+          name: pm.memberId.name,
+          role: pm.memberId.role,
+          roleType: pm.memberId.roleType,
+          photoUrl: pm.memberId.photoUrl || '',
+          photoBase64: pm.memberId.photoBase64 || '',
+          bio: pm.memberId.bio || '',
+          socials: pm.memberId.socials || '',
+          displayOrder: pm.memberId.displayOrder,
+          active: pm.memberId.active,
+          createdAt: pm.memberId.createdAt?.toISOString ? pm.memberId.createdAt.toISOString() : pm.memberId.createdAt,
+          updatedAt: pm.memberId.updatedAt?.toISOString ? pm.memberId.updatedAt.toISOString() : pm.memberId.updatedAt,
+        }
+      }));
+
+      return {
+        ...this.documentToProject(project),
+        members: formattedMembers
+      };
+    } catch (error) {
+      console.error(`Error fetching members for project ${(project as any)._id}:`, error);
+      return {
+        ...this.documentToProject(project),
+        members: []
+      };
+    }
+  }
 }
 
 // Export a singleton instance

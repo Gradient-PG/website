@@ -247,8 +247,11 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
         },
         body: JSON.stringify({
           ...formData,
-                  socials: formData.socials ? formData.socials : '', // Send as string
-        photoBase64: formData.photoBase64 || '', // Send base64 image
+          role: formData.roleType === 'member' && (!formData.role || formData.role.trim() === '') 
+            ? null // Explicitly send null for empty roles on members
+            : formData.role,
+          socials: formData.socials ? formData.socials : '', // Send as string
+          photoBase64: formData.photoBase64 || '', // Send base64 image
         }),
       });
 
@@ -484,15 +487,18 @@ export default function EditBoardMemberPage({ params }: EditBoardMemberPageProps
                   />
 
                   <FormField
-                    label="Role"
+                    label={formData.roleType === 'member' ? "Role (Optional)" : "Role"}
                     name="role"
                     value={formData.role}
                     onChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
-                    placeholder="e.g., President, Secretary, Member"
-                    required
+                    placeholder={formData.roleType === 'member' ? "e.g., Student, Researcher (optional)" : "e.g., President, Secretary"}
+                    required={formData.roleType !== 'member'}
                     error={errors.role}
                     maxLength={100}
-                    hint="Position or role within the organization"
+                    hint={formData.roleType === 'member' 
+                      ? "Optional role or description for regular members"
+                      : "Position or role within the organization"
+                    }
                   />
                 </div>
 

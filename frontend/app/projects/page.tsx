@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
 
 // Revalidate every 60 seconds
 export const revalidate = 60;
@@ -16,13 +17,19 @@ export const metadata: Metadata = {
   description: "Explore our current and completed research projects, workshops, and initiatives.",
 };
 
-// Server component to fetch all projects
+// Server component to fetch all projects with members
 async function getAllProjects(): Promise<Project[]> {
   try {
-    return await projectsRepo.findAll();
+    return await projectsRepo.findAllWithMembers();
   } catch (error) {
-    console.error('Failed to fetch projects:', error);
-    return [];
+    console.error('Failed to fetch projects with members:', error);
+    // Fallback to projects without members
+    try {
+      return await projectsRepo.findAll();
+    } catch (fallbackError) {
+      console.error('Failed to fetch projects (fallback):', fallbackError);
+      return [];
+    }
   }
 }
 
@@ -169,7 +176,7 @@ function ProjectCard({ project }: { project: Project }) {
 
         {/* Links */}
         {Object.keys(links).length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-4">
             {Object.entries(links).slice(0, 2).map(([type, url]) => (
               <a
                 key={type}
@@ -181,6 +188,31 @@ function ProjectCard({ project }: { project: Project }) {
                 {type}
               </a>
             ))}
+          </div>
+        )}
+
+        {/* Team Members */}
+        {project.members && project.members.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Team:</span>
+            <div className="flex -space-x-2">
+              {project.members.slice(0, 4).map((assignment) => (
+                <Avatar
+                  key={assignment.memberId}
+                  src={assignment.member?.photoUrl}
+                  base64={assignment.member?.photoBase64}
+                  name={assignment.member?.name || 'Member'}
+                  size="sm"
+                  className="ring-2 ring-white"
+                  alt={`${assignment.member?.name} photo`}
+                />
+              ))}
+              {project.members.length > 4 && (
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 ring-2 ring-white">
+                  +{project.members.length - 4}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </CardContent>

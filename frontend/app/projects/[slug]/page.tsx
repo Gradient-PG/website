@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { ArrowLeft, ExternalLink, Github, Globe, FileText } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
 
 interface ProjectPageProps {
   params: {
@@ -15,13 +16,19 @@ interface ProjectPageProps {
   };
 }
 
-// Server component to fetch project by slug
+// Server component to fetch project by slug with members
 async function getProject(slug: string): Promise<Project | null> {
   try {
-    return await projectsRepo.findBySlug(slug);
+    return await projectsRepo.findBySlugWithMembers(slug);
   } catch (error) {
-    console.error('Failed to fetch project:', error);
-    return null;
+    console.error('Failed to fetch project with members:', error);
+    // Fallback to project without members
+    try {
+      return await projectsRepo.findBySlug(slug);
+    } catch (fallbackError) {
+      console.error('Failed to fetch project (fallback):', fallbackError);
+      return null;
+    }
   }
 }
 
@@ -203,6 +210,44 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                       <span className="font-medium capitalize">{type}</span>
                       <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
                     </a>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Team Members */}
+          {project.members && project.members.length > 0 && (
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-bold mb-4">Team Members</h3>
+                <div className="space-y-3">
+                  {project.members.map((assignment) => (
+                    <div
+                      key={assignment.memberId}
+                      className="flex items-center gap-3 p-3 rounded-md bg-gray-50"
+                    >
+                      <Avatar
+                        src={assignment.member?.photoUrl}
+                        base64={assignment.member?.photoBase64}
+                        name={assignment.member?.name || 'Member'}
+                        size="md"
+                        alt={`${assignment.member?.name} photo`}
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">
+                          {assignment.member?.name}
+                        </h4>
+                        <p className="text-lg font-semibold text-primary capitalize">
+                          {assignment.role}
+                        </p>
+                        {assignment.member?.role && (
+                          <p className="text-sm text-gray-600">
+                            {assignment.member.role}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </CardContent>

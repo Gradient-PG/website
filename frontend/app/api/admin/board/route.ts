@@ -31,6 +31,11 @@ export async function POST(request: NextRequest) {
   try {
     const memberData = await request.json();
     
+    // Clean up empty role strings for members
+    if (memberData.roleType === 'member' && (memberData.role === '' || memberData.role === null)) {
+      memberData.role = undefined;
+    }
+    
     // Import validation function
     const { validateBoardMember } = await import('@/lib/validation');
     
