@@ -11,6 +11,9 @@ interface ImageUploadProps {
   onChange: (base64: string | null) => void;
   maxSize?: number; // Max file size in MB
   cropSize?: number; // Square crop size (default: 200)
+  noCrop?: boolean; // If true, resize maintaining aspect ratio instead of cropping
+  maxWidth?: number; // Max width when noCrop is true (default: 800)
+  maxHeight?: number; // Max height when noCrop is true (default: 600)
   className?: string;
   disabled?: boolean;
 }
@@ -20,6 +23,9 @@ export function ImageUpload({
   onChange,
   maxSize = 5,
   cropSize = 200,
+  noCrop = false,
+  maxWidth = 800,
+  maxHeight = 600,
   className,
   disabled = false
 }: ImageUploadProps) {
@@ -57,10 +63,6 @@ export function ImageUpload({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Set canvas size
-      canvas.width = cropSize;
-      canvas.height = cropSize;
-
       // Load image
       await new Promise((resolve, reject) => {
         img.onload = resolve;
@@ -68,17 +70,43 @@ export function ImageUpload({
         img.src = URL.createObjectURL(file);
       });
 
-      // Calculate crop dimensions (center crop to square)
-      const size = Math.min(img.width, img.height);
-      const startX = (img.width - size) / 2;
-      const startY = (img.height - size) / 2;
+      if (noCrop) {
+        // Resize maintaining aspect ratio
+        let width = img.width;
+        let height = img.height;
+        
+        // Calculate scale to fit within maxWidth and maxHeight
+        const scaleX = maxWidth / width;
+        const scaleY = maxHeight / height;
+        const scale = Math.min(scaleX, scaleY, 1); // Don't upscale
+        
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+        
+        // Set canvas size to actual image size
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw resized image
+        ctx.drawImage(img, 0, 0, width, height);
+      } else {
+        // Original crop behavior
+        // Set canvas size
+        canvas.width = cropSize;
+        canvas.height = cropSize;
 
-      // Draw cropped and resized image
-      ctx.drawImage(
-        img,
-        startX, startY, size, size, // Source rectangle (square crop)
-        0, 0, cropSize, cropSize     // Destination rectangle
-      );
+        // Calculate crop dimensions (center crop to square)
+        const size = Math.min(img.width, img.height);
+        const startX = (img.width - size) / 2;
+        const startY = (img.height - size) / 2;
+
+        // Draw cropped and resized image
+        ctx.drawImage(
+          img,
+          startX, startY, size, size, // Source rectangle (square crop)
+          0, 0, cropSize, cropSize     // Destination rectangle
+        );
+      }
 
       // Convert to base64
       const base64 = canvas.toDataURL('image/jpeg', 0.8);
@@ -94,7 +122,7 @@ export function ImageUpload({
     } finally {
       setIsProcessing(false);
     }
-  }, [cropSize, maxSize, onChange]);
+  }, [cropSize, maxSize, onChange, noCrop, maxWidth, maxHeight]);
 
   const handleFileSelect = useCallback((file: File) => {
     processImage(file);

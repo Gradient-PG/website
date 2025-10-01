@@ -7,7 +7,8 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Handshake
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
@@ -37,6 +38,11 @@ const navigation = [
     name: 'Board Members',
     href: '/admin/board',
     icon: Users,
+  },
+  {
+    name: 'Partnerships',
+    href: '/admin/partnerships',
+    icon: Handshake,
   },
   {
     name: 'Settings',

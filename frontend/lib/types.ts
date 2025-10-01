@@ -56,6 +56,31 @@ export interface BoardMemberInput {
   active?: boolean;
 }
 
+export interface Partnership {
+  id: string; // MongoDB ObjectId as string
+  name: string;
+  websiteUrl?: string; // Link to organization's website
+  logoUrl?: string;
+  logoBase64?: string; // Base64 encoded image (takes priority over logoUrl)
+  yearFrom: number;
+  yearTo?: number; // Optional for ongoing partnerships
+  displayOrder: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PartnershipInput {
+  name: string;
+  websiteUrl?: string;
+  logoUrl?: string;
+  logoBase64?: string;
+  yearFrom: number;
+  yearTo?: number;
+  displayOrder?: number;
+  active?: boolean;
+}
+
 // Project role enum for members working on projects
 export type ProjectRole = 'member' | 'coordinator';
 

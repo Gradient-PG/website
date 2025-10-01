@@ -11,11 +11,13 @@ import {
   Calendar,
   UserCheck,
   User,
-  Users2
+  Users2,
+  Handshake
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { projectsRepo, boardMembersRepo } from '@/lib/repositories';
+import { partnershipsRepo } from '@/lib/repositories/partnerships';
 
 interface StatsCardProps {
   title: string;
@@ -56,12 +58,16 @@ async function DashboardStats() {
       allProjects,
       activeProjects,
       completedProjects,
-      memberStats
+      memberStats,
+      allPartnerships,
+      activePartnerships
     ] = await Promise.all([
       projectsRepo.findAll(),
       projectsRepo.findAll('active'),
       projectsRepo.findAll('completed'),
-      boardMembersRepo.getStatsByRoleType()
+      boardMembersRepo.getStatsByRoleType(),
+      partnershipsRepo.findAll(),
+      partnershipsRepo.findActive()
     ]);
 
     const stats = [
@@ -100,6 +106,12 @@ async function DashboardStats() {
         value: activeProjects.length,
         description: 'Currently in progress',
         icon: Activity,
+      },
+      {
+        title: 'Partnerships',
+        value: activePartnerships.length,
+        description: `${allPartnerships.length} total`,
+        icon: Handshake,
       },
     ];
 
