@@ -54,10 +54,10 @@ export default function Hero() {
         </div>
 
         <div className="flex max-w-full flex-col items-start gap-5 md:w-1/2">
-          <h1 className="text-4xl font-bold text-slate-50">
-            Gradient<br></br>Research Group
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-50">
+            Gradient<br></br>Science Club
           </h1>
-          <p className="text-lg text-slate-300">
+          <p className="text-base md:text-lg text-slate-300">
             We are a team of passionate students who are dedicated to exploring
             the exciting field of machine learning. Our group provides a
             platform for learning and growth in this rapidly advancing field.

@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Critical styles to prevent layout shifts on refresh */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+  
+  /* Ensure consistent loading */
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* Ensure proper hydration */
+@layer components {
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  
+  @media (min-width: 1400px) {
+    .container {
+      max-width: 1400px;
+    }
+  }
+}

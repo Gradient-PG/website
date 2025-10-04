@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1,
+    "title": "Quantum Computing Workshop Series",
+    "slug": "quantum-computing-workshop",
+    "description": "A comprehensive workshop series introducing students to quantum computing principles, quantum algorithms, and hands-on programming with Qiskit. Covers quantum gates, superposition, entanglement, and basic quantum algorithms like Deutsch-Jozsa and Grover's algorithm.",
+    "imageUrl": "",
+    "tags": "quantum computing,workshops,education,programming",
+    "status": "active",
+    "links": "{\"website\":\"https://quantumworkshop.example.com\",\"github\":\"https://github.com/gradientscience/quantum-workshop\",\"materials\":\"https://drive.google.com/quantum-materials\"}",
+    "displayOrder": 1,
+    "createdAt": "2025-09-24T11:10:41.910Z",
+    "updatedAt": "2025-09-24T11:10:41.910Z"
+  },
+  {
+    "id": 2,
+    "title": "AI Ethics Research Project",
+    "slug": "ai-ethics-research",
+    "description": "Investigating the ethical implications of artificial intelligence in decision-making systems. Our team is conducting surveys, analyzing bias in ML models, and developing frameworks for responsible AI development in academic and industry settings.",
+    "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=600&fit=crop",
+    "tags": "artificial intelligence,ethics,research,bias",
+    "status": "active",
+    "links": "{\"paper\":\"https://arxiv.org/abs/2023.ai-ethics\",\"github\":\"https://github.com/gradientscience/ai-ethics\",\"survey\":\"https://forms.gle/ai-ethics-survey\"}",
+    "displayOrder": 2,
+    "createdAt": "2025-09-24T11:10:41.911Z",
+    "updatedAt": "2025-09-24T11:10:41.911Z"
+  },
+  {
+    "id": 3,
+    "title": "Climate Data Visualization Platform",
+    "slug": "climate-data-viz",
+    "description": "Building an interactive web platform to visualize climate change data from various sources. The platform will help students and researchers understand climate trends, temperature changes, and environmental impacts through dynamic charts and maps.",
+    "imageUrl": "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=800&h=600&fit=crop",
+    "tags": "climate change,data visualization,web development,environmental science",
+    "status": "planned",
+    "links": "{\"demo\":\"https://climate-viz.example.com\",\"github\":\"https://github.com/gradientscience/climate-viz\"}",
+    "displayOrder": 3,
+    "createdAt": "2025-09-24T11:10:41.911Z",
+    "updatedAt": "2025-09-24T11:10:41.911Z"
+  },
+  {
+    "id": 4,
+    "title": "Bioinformatics Study Group",
+    "slug": "bioinformatics-study-group",
+    "description": "Weekly study sessions focused on computational biology and bioinformatics. We cover topics like sequence analysis, phylogenetics, structural biology, and genomics using tools like BLAST, Clustal, and Python BioPython library.",
+    "imageUrl": "https://images.unsplash.com/photo-1576086213369-97a306d36557?w=800&h=600&fit=crop",
+    "tags": "bioinformatics,computational biology,study group,genomics",
+    "status": "completed",
+    "links": "{\"resources\":\"https://bio-study.example.com\",\"github\":\"https://github.com/gradientscience/bioinformatics\"}",
+    "displayOrder": 4,
+    "createdAt": "2025-09-24T11:10:41.911Z",
+    "updatedAt": "2025-09-24T11:10:41.911Z"
+  }
+]

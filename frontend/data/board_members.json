@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "name": "Sarah Chen",
+    "role": "President",
+    "photoUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=face",
+    "bio": "Third-year Computer Science major with a passion for machine learning and quantum computing. Previously interned at Google Research and published papers on neural network optimization.",
+    "socials": "{\"email\":\"sarah.chen@university.edu\",\"linkedin\":\"https://linkedin.com/in/sarah-chen-cs\",\"github\":\"https://github.com/sarahchen\",\"website\":\"https://sarahchen.dev\"}",
+    "displayOrder": 1,
+    "active": true,
+    "createdAt": "2025-09-24T11:10:41.912Z",
+    "updatedAt": "2025-09-24T11:10:41.912Z"
+  },
+  {
+    "id": 2,
+    "name": "Marcus Rodriguez",
+    "role": "Vice President",
+    "photoUrl": "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face",
+    "bio": "Physics and Mathematics double major interested in theoretical physics and computational modeling. Leads our quantum computing initiatives and has experience with high-performance computing.",
+    "socials": "{\"email\":\"marcus.rodriguez@university.edu\",\"linkedin\":\"https://linkedin.com/in/marcus-rodriguez-physics\",\"github\":\"https://github.com/marcusrodriguez\"}",
+    "displayOrder": 2,
+    "active": true,
+    "createdAt": "2025-09-24T11:10:41.912Z",
+    "updatedAt": "2025-09-24T11:10:41.912Z"
+  },
+  {
+    "id": 3,
+    "name": "Emily Johnson",
+    "role": "Secretary",
+    "photoUrl": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face",
+    "bio": "Data Science major with expertise in statistical analysis and data visualization. Passionate about using data to solve environmental and social issues. Organizes our workshops and events.",
+    "socials": "{\"email\":\"emily.johnson@university.edu\",\"linkedin\":\"https://linkedin.com/in/emily-johnson-datasci\",\"twitter\":\"https://twitter.com/emily_dataviz\"}",
+    "displayOrder": 3,
+    "active": true,
+    "createdAt": "2025-09-24T11:10:41.913Z",
+    "updatedAt": "2025-09-24T11:10:41.913Z"
+  },
+  {
+    "id": 4,
+    "name": "David Kim",
+    "role": "Treasurer",
+    "photoUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
+    "bio": "Economics and Computer Science major with interests in algorithmic trading and financial technology. Manages club finances and coordinates funding for research projects.",
+    "socials": "{\"email\":\"david.kim@university.edu\",\"linkedin\":\"https://linkedin.com/in/david-kim-fintech\",\"github\":\"https://github.com/davidkim\"}",
+    "displayOrder": 4,
+    "active": true,
+    "createdAt": "2025-09-24T11:10:41.913Z",
+    "updatedAt": "2025-09-24T11:10:41.913Z"
+  },
+  {
+    "id": 5,
+    "name": "Aisha Patel",
+    "role": "Research Coordinator",
+    "photoUrl": "",
+    "bio": "Bioengineering major focused on computational biology and medical AI. Coordinates research collaborations with faculty and organizes our bioinformatics study groups.",
+    "socials": "{\"email\":\"aisha.patel@university.edu\",\"linkedin\":\"https://linkedin.com/in/aisha-patel-bioeng\",\"github\":\"https://github.com/aishapatel\",\"website\":\"https://aishapatel.bio\"}",
+    "displayOrder": 5,
+    "active": true,
+    "createdAt": "2025-09-24T11:10:41.913Z",
+    "updatedAt": "2025-09-24T11:10:41.913Z"
+  },
+  {
+    "id": 6,
+    "name": "James Thompson",
+    "role": "Workshop Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
+    "bio": "Computer Engineering major with expertise in embedded systems and IoT. Organizes hands-on technical workshops and maintains our lab equipment.",
+    "socials": "{\"email\":\"james.thompson@university.edu\",\"linkedin\":\"https://linkedin.com/in/james-thompson-eng\",\"github\":\"https://github.com/jamesthompson\"}",
+    "displayOrder": 6,
+    "active": true,
+    "createdAt": "2025-09-24T11:10:41.913Z",
+    "updatedAt": "2025-09-24T11:10:41.913Z"
+  }
+]
